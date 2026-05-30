@@ -1,14 +1,32 @@
-"""REST API routes (JSON)."""
+"""REST API — JSON:API 1.0 (https://jsonapi.org) format.
+
+All responses use ``Content-Type: application/vnd.api+json``.
+
+Request bodies are accepted in both the strict JSON:API envelope::
+
+    {"data": {"type": "albums", "attributes": {\u2026}}}
+
+and as plain JSON (backward-compatible with the browser UI)::
+
+    {"name": "My Album", "album_type": "dynamic", \u2026}
+
+Error responses follow the JSON:API errors object::
+
+    {"jsonapi": {\u2026}, "errors": [{"status": "422", "title": \u2026, "detail": \u2026}]}
+"""
 import uuid
 
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, request, current_app
 from flask_login import login_required
 
 from app import db
 from app.models import Album, Setting, SyncLog
 from app.utils.validators import validate_query_config
+import app.utils.jsonapi as jsonapi
 
 bp = Blueprint('api', __name__)
+
+_SENSITIVE_SETTINGS = frozenset({'immich_api_key', 'oidc_client_secret'})
 
 
 # ---------------------------------------------------------------------------
@@ -19,79 +37,93 @@ bp = Blueprint('api', __name__)
 @login_required
 def get_albums():
     albums = Album.query.order_by(Album.updated_at.desc()).all()
-    return jsonify([a.to_dict() for a in albums])
+    return jsonapi.ok(
+        [a.to_jsonapi_resource() for a in albums],
+        meta={'total': len(albums)},
+        links={'self': '/api/albums'},
+    )
 
 
 @bp.route('/albums', methods=['POST'])
 @login_required
 def create_album():
-    data = request.get_json(force=True, silent=True) or {}
-    name = (data.get('name') or '').strip()
-    query_config = data.get('query_config')
+    attrs = jsonapi.get_attributes()
+    name = (attrs.get('name') or '').strip()
+    query_config = attrs.get('query_config')
 
-    errors = []
+    errs = []
     if not name:
-        errors.append('name is required')
+        errs.append('name is required')
     if query_config is None:
-        errors.append('query_config is required')
+        errs.append('query_config is required')
     else:
-        errors.extend(validate_query_config(query_config))
-    if Album.query.filter_by(name=name).first():
-        errors.append(f'Album "{name}" already exists')
+        errs.extend(validate_query_config(query_config))
+    if name and Album.query.filter_by(name=name).first():
+        errs.append(f'Album "{name}" already exists')
 
-    if errors:
-        return jsonify({'errors': errors}), 422
+    if errs:
+        return jsonapi.errors(errs)
 
     album = Album(
         id=str(uuid.uuid4()),
         name=name,
-        album_type=data.get('album_type', 'dynamic'),
+        album_type=attrs.get('album_type', 'dynamic'),
         query_config=query_config,
-        sync_enabled=data.get('sync_enabled', True),
-        sync_interval=data.get('sync_interval'),
+        sync_enabled=attrs.get('sync_enabled', True),
+        sync_interval=attrs.get('sync_interval'),
     )
     db.session.add(album)
     db.session.commit()
-    return jsonify(album.to_dict()), 201
+    return jsonapi.created(
+        album.to_jsonapi_resource(),
+        links={'self': f'/api/albums/{album.id}'},
+    )
 
 
 @bp.route('/albums/<album_id>', methods=['GET'])
 @login_required
 def get_album(album_id):
     album = Album.query.get_or_404(album_id)
-    return jsonify(album.to_dict())
+    return jsonapi.ok(
+        album.to_jsonapi_resource(),
+        links={'self': f'/api/albums/{album_id}'},
+    )
 
 
-@bp.route('/albums/<album_id>', methods=['PUT'])
+@bp.route('/albums/<album_id>', methods=['PUT', 'PATCH'])
 @login_required
 def update_album(album_id):
     album = Album.query.get_or_404(album_id)
-    data = request.get_json(force=True, silent=True) or {}
+    attrs = jsonapi.get_attributes()
 
-    errors = []
-    if 'name' in data:
-        existing = Album.query.filter_by(name=data['name']).first()
-        if existing and existing.id != album_id:
-            errors.append(f'Album "{data["name"]}" already exists')
+    errs = []
+    if 'name' in attrs:
+        new_name = (attrs['name'] or '').strip()
+        existing = Album.query.filter_by(name=new_name).first()
+        if existing and str(existing.id) != album_id:
+            errs.append(f'Album "{new_name}" already exists')
         else:
-            album.name = data['name']
+            album.name = new_name
 
-    if 'query_config' in data:
-        qerrs = validate_query_config(data['query_config'])
+    if 'query_config' in attrs:
+        qerrs = validate_query_config(attrs['query_config'])
         if qerrs:
-            errors.extend(qerrs)
+            errs.extend(qerrs)
         else:
-            album.query_config = data['query_config']
+            album.query_config = attrs['query_config']
 
-    if errors:
-        return jsonify({'errors': errors}), 422
+    if errs:
+        return jsonapi.errors(errs)
 
     for field in ('album_type', 'sync_enabled', 'sync_interval'):
-        if field in data:
-            setattr(album, field, data[field])
+        if field in attrs:
+            setattr(album, field, attrs[field])
 
     db.session.commit()
-    return jsonify(album.to_dict())
+    return jsonapi.ok(
+        album.to_jsonapi_resource(),
+        links={'self': f'/api/albums/{album_id}'},
+    )
 
 
 @bp.route('/albums/<album_id>', methods=['DELETE'])
@@ -100,7 +132,7 @@ def delete_album(album_id):
     album = Album.query.get_or_404(album_id)
     db.session.delete(album)
     db.session.commit()
-    return jsonify({'message': 'Album deleted'})
+    return jsonapi.meta_ok({'message': f'Album {album_id} deleted'})
 
 
 @bp.route('/albums/<album_id>/sync', methods=['POST'])
@@ -111,10 +143,16 @@ def sync_album(album_id):
         from app.auth import get_immich_client
         from app.album_service import AlbumSyncService
         result = AlbumSyncService(get_immich_client()).sync_album(album)
-        return jsonify(result)
+        return jsonapi.ok(
+            jsonapi.resource(
+                type_='sync-results',
+                id_=album_id,
+                attributes=result,
+            )
+        )
     except Exception as exc:
         current_app.logger.error(f'API sync error for album {album_id}: {exc}')
-        return jsonify({'status': 'error', 'error': str(exc)}), 500
+        return jsonapi.error(500, 'Sync Failed', str(exc))
 
 
 @bp.route('/albums/<album_id>/logs', methods=['GET'])
@@ -129,7 +167,11 @@ def get_sync_logs(album_id):
         .limit(limit)
         .all()
     )
-    return jsonify([log.to_dict() for log in logs])
+    return jsonapi.ok(
+        [log.to_jsonapi_resource() for log in logs],
+        meta={'total': len(logs)},
+        links={'self': f'/api/albums/{album_id}/logs'},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -142,10 +184,18 @@ def get_people():
     try:
         from app.auth import get_immich_client
         client = get_immich_client()
-        data = client.get_people()
-        return jsonify(data.get('people', []))
+        if not client:
+            return jsonapi.error(503, 'Service Unavailable', 'Immich client not configured')
+        raw = client.get_people()
+        # Immich returns {"people": [...]} but handle a plain list for test mocks
+        people = raw.get('people', []) if isinstance(raw, dict) else raw
+        data = [
+            jsonapi.resource('people', p['id'], {'name': p.get('name', '')})
+            for p in people
+        ]
+        return jsonapi.ok(data, meta={'total': len(data)})
     except Exception as exc:
-        return jsonify({'error': str(exc)}), 500
+        return jsonapi.error(500, 'Immich Error', str(exc))
 
 
 @bp.route('/immich/tags', methods=['GET'])
@@ -154,9 +204,16 @@ def get_tags():
     try:
         from app.auth import get_immich_client
         client = get_immich_client()
-        return jsonify(client.get_tags())
+        if not client:
+            return jsonapi.error(503, 'Service Unavailable', 'Immich client not configured')
+        tags = client.get_tags()
+        data = [
+            jsonapi.resource('tags', t['id'], {'name': t.get('name', '')})
+            for t in tags
+        ]
+        return jsonapi.ok(data, meta={'total': len(data)})
     except Exception as exc:
-        return jsonify({'error': str(exc)}), 500
+        return jsonapi.error(500, 'Immich Error', str(exc))
 
 
 # ---------------------------------------------------------------------------
@@ -166,28 +223,31 @@ def get_tags():
 @bp.route('/settings', methods=['GET'])
 @login_required
 def get_settings():
-    SENSITIVE = {'immich_api_key', 'oidc_client_secret'}
-    result = {}
-    for s in Setting.query.all():
-        value = '***' if s.key in SENSITIVE else s.value
-        result[s.key] = {'value': value, 'description': s.description}
-    return jsonify(result)
+    settings = Setting.query.all()
+    data = [
+        s.to_jsonapi_resource(mask_value=(s.key in _SENSITIVE_SETTINGS))
+        for s in settings
+    ]
+    return jsonapi.ok(
+        data,
+        meta={'total': len(data)},
+        links={'self': '/api/settings'},
+    )
 
 
-@bp.route('/settings', methods=['POST'])
+@bp.route('/settings', methods=['POST', 'PATCH'])
 @login_required
 def update_settings():
-    data = request.get_json(force=True, silent=True) or {}
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
+    attrs = jsonapi.get_attributes()
+    if not attrs:
+        return jsonapi.error(400, 'Bad Request', 'No attributes provided')
 
-    for key, value in data.items():
+    for key, value in attrs.items():
         setting = Setting.query.get(key)
         if setting:
             setting.value = str(value)
         else:
-            setting = Setting(key=key, value=str(value))
-            db.session.add(setting)
+            db.session.add(Setting(key=key, value=str(value)))
     db.session.commit()
 
     try:
@@ -196,24 +256,71 @@ def update_settings():
     except Exception as exc:
         current_app.logger.warning(f'Scheduler update failed after settings change: {exc}')
 
-    return jsonify({'message': 'Settings updated'})
+    return jsonapi.meta_ok({'message': 'Settings updated'})
 
 
-@bp.route('/test-connection', methods=['POST'])
+@bp.route('/settings/test-connection', methods=['POST'])
 @login_required
 def test_connection():
+    """Test the Immich connection using values from the request body (before saving)."""
     try:
+        from app.immich_client import ImmichClient
         from app.auth import get_immich_client
-        client = get_immich_client()
+
+        attrs = jsonapi.get_attributes()
+        url = attrs.get('immich_url', '').strip()
+        key = attrs.get('immich_api_key', '').strip()
+
+        client = ImmichClient(url, key) if url and key else get_immich_client()
         version = client.version()
         whoami = client.whoami()
-        return jsonify({'status': 'ok', 'version': version, 'user': whoami.get('email')})
+        return jsonapi.ok(
+            jsonapi.resource(
+                type_='connection-tests',
+                id_='latest',
+                attributes={
+                    'ok': True,
+                    'message': f'Connected as {whoami.get("email", "unknown")} (v{version})',
+                    'version': version,
+                    'user': whoami.get('email'),
+                },
+            )
+        )
     except Exception as exc:
-        return jsonify({'status': 'error', 'error': str(exc)}), 500
+        return jsonapi.ok(
+            jsonapi.resource(
+                type_='connection-tests',
+                id_='latest',
+                attributes={'ok': False, 'message': str(exc)},
+            )
+        )
 
+
+@bp.route('/settings/reschedule', methods=['POST'])
+@login_required
+def reschedule():
+    """Re-apply the sync schedule from the current settings without restarting."""
+    try:
+        from app.scheduler import schedule_sync_jobs
+        count = schedule_sync_jobs()
+        return jsonapi.meta_ok({'message': f'Schedule updated: {count} job(s) active'})
+    except Exception as exc:
+        return jsonapi.error(500, 'Scheduler Error', str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Scheduler
+# ---------------------------------------------------------------------------
 
 @bp.route('/scheduler/status', methods=['GET'])
 @login_required
 def scheduler_status():
     from app.scheduler import get_scheduler_status
-    return jsonify(get_scheduler_status())
+    status = get_scheduler_status()
+    return jsonapi.ok(
+        jsonapi.resource(
+            type_='scheduler-status',
+            id_='default',
+            attributes=status,
+        )
+    )
