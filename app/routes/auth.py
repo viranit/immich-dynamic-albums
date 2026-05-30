@@ -4,6 +4,7 @@ from flask import (
     flash, request, session, current_app,
 )
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_babel import gettext as _
 
 bp = Blueprint('auth', __name__)
 
@@ -24,10 +25,9 @@ def login_immich():
     immich_url = request.form.get('immich_url', '').strip()
 
     if not api_key:
-        flash('API key is required.', 'danger')
+        flash(_('API key is required.'), 'danger')
         return redirect(url_for('auth.login'))
 
-    # Allow the user to override the Immich URL at login time
     if immich_url:
         session['immich_url'] = immich_url
 
@@ -35,11 +35,11 @@ def login_immich():
     user = authenticate_immich(api_key)
     if user:
         login_user(user, remember=True)
-        flash(f'Welcome, {user.username}!', 'success')
+        flash(_('Welcome, %(name)s!', name=user.username), 'success')
         next_page = request.args.get('next')
         return redirect(next_page or url_for('albums.list_albums'))
 
-    flash('Invalid API key or Immich URL. Please try again.', 'danger')
+    flash(_('Invalid API key or Immich URL. Please try again.'), 'danger')
     return redirect(url_for('auth.login'))
 
 
@@ -61,12 +61,12 @@ def oidc_callback():
         user = authenticate_oidc(user_info)
         if user:
             login_user(user, remember=True)
-            flash(f'Welcome, {user.username}!', 'success')
+            flash(_('Welcome, %(name)s!', name=user.username), 'success')
             return redirect(url_for('albums.list_albums'))
-        flash('Authentication failed. No matching user.', 'danger')
+        flash(_('Authentication failed. No matching user.'), 'danger')
     except Exception as exc:
         current_app.logger.error(f'OIDC callback error: {exc}')
-        flash('Authentication error. Please try again.', 'danger')
+        flash(_('Authentication error. Please try again.'), 'danger')
     return redirect(url_for('auth.login'))
 
 
@@ -76,5 +76,5 @@ def logout():
     """Log out the current user."""
     session.clear()
     logout_user()
-    flash('You have been logged out.', 'info')
+    flash(_('You have been logged out.'), 'info')
     return redirect(url_for('auth.login'))

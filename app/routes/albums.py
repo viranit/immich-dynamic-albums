@@ -7,6 +7,7 @@ from flask import (
     flash, request, current_app,
 )
 from flask_login import login_required
+from flask_babel import gettext as _
 
 from app import db
 from app.models import Album, SyncLog
@@ -43,18 +44,18 @@ def new_album():
 
     errors = []
     if not name:
-        errors.append('Album name is required.')
+        errors.append(_('Album name is required.'))
 
     try:
         query_config = json.loads(query_config_raw)
     except json.JSONDecodeError:
         query_config = {}
-        errors.append('Invalid JSON in query configuration.')
+        errors.append(_('Invalid JSON in query configuration.'))
 
     errors.extend(validate_query_config(query_config))
 
     if Album.query.filter_by(name=name).first():
-        errors.append(f'An album named "{name}" already exists.')
+        errors.append(_('An album named "%(name)s" already exists.', name=name))
 
     if errors:
         for err in errors:
@@ -73,9 +74,8 @@ def new_album():
     db.session.add(album)
     db.session.commit()
 
-    flash(f'Album "{name}" created.', 'success')
+    flash(_('Album "%(name)s" created.', name=name), 'success')
 
-    # Static albums sync immediately on creation
     if album_type == 'static':
         return redirect(url_for('albums.sync_album', album_id=album.id,
                                 next=url_for('albums.album_detail', album_id=album.id)))
@@ -115,19 +115,19 @@ def edit_album(album_id):
 
     errors = []
     if not name:
-        errors.append('Album name is required.')
+        errors.append(_('Album name is required.'))
 
     try:
         query_config = json.loads(query_config_raw)
     except json.JSONDecodeError:
         query_config = album.query_config
-        errors.append('Invalid JSON in query configuration.')
+        errors.append(_('Invalid JSON in query configuration.'))
 
     errors.extend(validate_query_config(query_config))
 
     existing = Album.query.filter_by(name=name).first()
     if existing and existing.id != album_id:
-        errors.append(f'An album named "{name}" already exists.')
+        errors.append(_('An album named "%(name)s" already exists.', name=name))
 
     if errors:
         for err in errors:
@@ -142,7 +142,7 @@ def edit_album(album_id):
     album.sync_interval = int(sync_interval) if sync_interval else None
     db.session.commit()
 
-    flash(f'Album "{name}" updated.', 'success')
+    flash(_('Album "%(name)s" updated.', name=name), 'success')
     return redirect(url_for('albums.album_detail', album_id=album.id))
 
 
@@ -154,7 +154,8 @@ def delete_album(album_id):
     name = album.name
     db.session.delete(album)
     db.session.commit()
-    flash(f'Album "{name}" deleted from this app (Immich album untouched).', 'success')
+    flash(_('Album "%(name)s" deleted from this app (Immich album untouched).', name=name),
+          'success')
     return redirect(url_for('albums.list_albums'))
 
 
@@ -172,15 +173,16 @@ def sync_album(album_id):
 
         if result['status'] == 'success':
             flash(
-                f'Sync complete — {result["assets_added"]} added, '
-                f'{result["assets_removed"]} removed.',
+                _('Sync complete \u2014 %(added)s added, %(removed)s removed.',
+                  added=result['assets_added'], removed=result['assets_removed']),
                 'success',
             )
         else:
-            flash(f'Sync failed: {result.get("error", "Unknown error")}', 'danger')
+            flash(_('Sync failed: %(error)s', error=result.get('error', 'Unknown error')),
+                  'danger')
     except Exception as exc:
         current_app.logger.error(f'Sync error for album {album_id}: {exc}')
-        flash(f'Sync error: {exc}', 'danger')
+        flash(_('Sync error: %(error)s', error=exc), 'danger')
 
     next_url = request.args.get('next') or url_for('albums.album_detail', album_id=album_id)
     return redirect(next_url)

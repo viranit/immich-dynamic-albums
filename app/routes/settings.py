@@ -3,92 +3,123 @@ from flask import (
     Blueprint, render_template, redirect, url_for, flash, request,
 )
 from flask_login import login_required
+from flask_babel import gettext as _, lazy_gettext as _l
 
 from app import db
 from app.models import Setting
 
 bp = Blueprint('settings', __name__)
 
-# Metadata describing every configurable setting
+# ---------------------------------------------------------------------------
+# Settings definitions
+#
+# ``section``       - plain string key used for grouping / template comparisons.
+# ``section_label`` - lazy-translated display label.
+# ``label``         - lazy-translated field label.
+# ``help``          - lazy-translated helper text shown below the field.
+# ``unit``          - optional lazy-translated unit shown in the input group.
+# ---------------------------------------------------------------------------
 SETTINGS_DEFINITIONS = [
     # --- Immich connection ---
     {
-        'section': 'Immich Connection',
+        'section': 'immich_connection',
+        'section_label': _l('Immich Connection'),
         'key': 'immich_url',
-        'label': 'Immich URL',
+        'label': _l('Immich URL'),
         'type': 'url',
         'placeholder': 'http://immich-server:2283',
-        'description': 'Base URL of your Immich instance',
+        'help': _l('Base URL of your Immich instance'),
+        'col_width': 6,
     },
     {
-        'section': 'Immich Connection',
+        'section': 'immich_connection',
+        'section_label': _l('Immich Connection'),
         'key': 'immich_api_key',
-        'label': 'Immich API Key',
+        'label': _l('Immich API Key'),
         'type': 'password',
-        'description': 'Admin API key for Immich access',
+        'help': _l('Admin API key for Immich access'),
+        'col_width': 6,
     },
     # --- Authentication ---
     {
-        'section': 'Authentication',
+        'section': 'authentication',
+        'section_label': _l('Authentication'),
         'key': 'auth_method',
-        'label': 'Authentication Method',
+        'label': _l('Authentication Method'),
         'type': 'select',
-        'options': [('immich', 'Immich API Key'), ('oidc', 'OIDC / SSO')],
-        'description': 'How users log in to this application',
+        'choices': [('immich', _l('Immich API Key')), ('oidc', _l('OIDC / SSO')), ('both', _l('Both'))],
+        'help': _l('How users log in to this application'),
+        'col_width': 6,
     },
     {
-        'section': 'Authentication',
+        'section': 'authentication',
+        'section_label': _l('Authentication'),
         'key': 'oidc_discovery_url',
-        'label': 'OIDC Discovery URL',
+        'label': _l('OIDC Discovery URL'),
         'type': 'url',
         'placeholder': 'https://idp.example.com/.well-known/openid-configuration',
-        'description': 'OpenID Connect well-known configuration URL',
+        'help': _l('OpenID Connect well-known configuration URL'),
+        'col_width': 12,
     },
     {
-        'section': 'Authentication',
+        'section': 'authentication',
+        'section_label': _l('Authentication'),
         'key': 'oidc_client_id',
-        'label': 'OIDC Client ID',
+        'label': _l('OIDC Client ID'),
         'type': 'text',
-        'description': 'OAuth 2.0 client identifier',
+        'help': _l('OAuth 2.0 client identifier'),
+        'col_width': 6,
     },
     {
-        'section': 'Authentication',
+        'section': 'authentication',
+        'section_label': _l('Authentication'),
         'key': 'oidc_client_secret',
-        'label': 'OIDC Client Secret',
+        'label': _l('OIDC Client Secret'),
         'type': 'password',
-        'description': 'OAuth 2.0 client secret',
+        'help': _l('OAuth 2.0 client secret'),
+        'col_width': 6,
     },
     {
-        'section': 'Authentication',
+        'section': 'authentication',
+        'section_label': _l('Authentication'),
         'key': 'oidc_redirect_uri',
-        'label': 'OIDC Redirect URI',
+        'label': _l('OIDC Redirect URI'),
         'type': 'url',
         'placeholder': 'http://localhost:5000/auth/callback',
-        'description': 'Callback URL registered with your identity provider',
+        'help': _l('Callback URL registered with your identity provider'),
+        'col_width': 12,
     },
     # --- Sync schedule ---
     {
-        'section': 'Sync Schedule',
+        'section': 'sync_schedule',
+        'section_label': _l('Sync Schedule'),
         'key': 'sync_enabled',
-        'label': 'Enable Automatic Sync',
+        'label': _l('Enable Automatic Sync'),
         'type': 'checkbox',
-        'description': 'Automatically sync dynamic albums on the configured interval',
+        'help': _l('Automatically sync dynamic albums on the configured interval'),
+        'col_width': 12,
     },
     {
-        'section': 'Sync Schedule',
+        'section': 'sync_schedule',
+        'section_label': _l('Sync Schedule'),
         'key': 'global_sync_interval',
-        'label': 'Sync Interval (minutes)',
+        'label': _l('Sync Interval'),
+        'unit': _l('minutes'),
         'type': 'number',
         'placeholder': '60',
-        'description': 'How often dynamic albums are synced (0 disables scheduling)',
+        'help': _l('How often dynamic albums are synced (0 disables scheduling)'),
+        'col_width': 6,
     },
     {
-        'section': 'Sync Schedule',
+        'section': 'sync_schedule',
+        'section_label': _l('Sync Schedule'),
         'key': 'start_delay',
-        'label': 'Start Delay (seconds)',
+        'label': _l('Start Delay'),
+        'unit': _l('seconds'),
         'type': 'number',
         'placeholder': '0',
-        'description': 'Delay before the first automatic sync after startup',
+        'help': _l('Delay before the first automatic sync after startup'),
+        'col_width': 6,
     },
 ]
 
@@ -101,15 +132,10 @@ def _load_settings():
 @login_required
 def settings():
     """Render the settings page."""
-    # Group definitions by section for display
-    sections = {}
-    for defn in SETTINGS_DEFINITIONS:
-        sections.setdefault(defn['section'], []).append(defn)
-
     return render_template(
         'settings.html',
-        current=_load_settings(),
-        sections=sections,
+        current_values=_load_settings(),
+        settings_definitions=SETTINGS_DEFINITIONS,
     )
 
 
@@ -125,25 +151,24 @@ def save_settings():
             value = request.form.get(key, '').strip()
 
         if not value and defn['type'] != 'checkbox':
-            continue  # don't overwrite existing value with empty string
+            continue
 
         setting = Setting.query.get(key)
         if setting:
             setting.value = value
         else:
             setting = Setting(key=key, value=value,
-                              description=defn.get('description', ''))
+                              description=str(defn.get('help', '')))
             db.session.add(setting)
 
     db.session.commit()
 
-    # Re-schedule jobs using new interval / enabled flag
     try:
         from app.scheduler import schedule_sync_jobs
         schedule_sync_jobs()
-        flash('Settings saved and scheduler updated.', 'success')
+        flash(_('Settings saved and scheduler updated.'), 'success')
     except Exception as exc:
-        flash(f'Settings saved but scheduler update failed: {exc}', 'warning')
+        flash(_('Settings saved but scheduler update failed: %(error)s', error=exc), 'warning')
 
     return redirect(url_for('settings.settings'))
 
@@ -151,30 +176,31 @@ def save_settings():
 @bp.route('/settings/test-connection', methods=['POST'])
 @login_required
 def test_connection():
-    """Test the configured Immich connection."""
+    """Test the configured Immich connection (HTML form route)."""
     try:
         from app.auth import get_immich_client
         client = get_immich_client()
         version = client.version()
         whoami = client.whoami()
+        v = f"{version.get('major')}.{version.get('minor')}.{version.get('patch')}"
         flash(
-            f'Connected ✔  Immich v{version.get("major")}.{version.get("minor")}.{version.get("patch")} '
-            f'— logged in as {whoami.get("email")}',
+            _('Connected \u2714  Immich v%(version)s \u2014 logged in as %(email)s',
+              version=v, email=whoami.get('email')),
             'success',
         )
     except Exception as exc:
-        flash(f'Connection failed: {exc}', 'danger')
+        flash(_('Connection failed: %(error)s', error=exc), 'danger')
     return redirect(url_for('settings.settings'))
 
 
 @bp.route('/settings/reschedule', methods=['POST'])
 @login_required
 def reschedule():
-    """Force a reschedule of sync jobs."""
+    """Force a reschedule of sync jobs (HTML form route)."""
     try:
         from app.scheduler import schedule_sync_jobs
         schedule_sync_jobs()
-        flash('Scheduler updated.', 'success')
+        flash(_('Scheduler updated.'), 'success')
     except Exception as exc:
-        flash(f'Scheduler update failed: {exc}', 'danger')
+        flash(_('Scheduler update failed: %(error)s', error=exc), 'danger')
     return redirect(url_for('settings.settings'))
