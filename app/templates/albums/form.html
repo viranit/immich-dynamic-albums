@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Edit' if action == 'edit' else 'New' }} Album — Immich Dynamic Albums{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ url_for('albums.list_albums') }}" class="text-decoration-none text-secondary">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h4 class="mb-0">
+    <i class="bi bi-{{ 'pencil' if action == 'edit' else 'plus-circle' }} text-primary me-2"></i>
+    {{ 'Edit' if action == 'edit' else 'Create' }} Album
+  </h4>
+</div>
+
+<form method="POST" id="albumForm"
+      action="{{ url_for('albums.edit_album', album_id=album.id) if action == 'edit' else url_for('albums.new_album') }}">
+
+  <div class="row g-4">
+    <!-- Left column: metadata -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header fw-semibold">Album Details</div>
+        <div class="card-body d-flex flex-column gap-3">
+
+          <div>
+            <label for="name" class="form-label">Album Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="name" name="name" required
+                   value="{{ (form_data or album or {}).__class__.__name__ != 'NoneType' and (form_data.get('name') if form_data else (album.name if album else '')) or '' }}">
+          </div>
+
+          <div>
+            <label class="form-label">Album Type</label>
+            <div class="d-flex gap-3">
+              {% set cur_type = (form_data.get('album_type') if form_data else (album.album_type if album else 'dynamic')) %}
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="album_type" id="typeDynamic"
+                       value="dynamic" {% if cur_type != 'static' %}checked{% endif %}>
+                <label class="form-check-label" for="typeDynamic">
+                  <i class="bi bi-arrow-repeat text-primary me-1"></i>Dynamic
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="album_type" id="typeStatic"
+                       value="static" {% if cur_type == 'static' %}checked{% endif %}>
+                <label class="form-check-label" for="typeStatic">
+                  <i class="bi bi-bookmark-check text-success me-1"></i>Static
+                </label>
+              </div>
+            </div>
+            <div class="form-text" id="typeHelp"></div>
+          </div>
+
+          <div id="syncOptions" {% if cur_type == 'static' %}style="display:none"{% endif %}>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="sync_enabled"
+                     name="sync_enabled" {% if not album or album.sync_enabled %}checked{% endif %}>
+              <label class="form-check-label" for="sync_enabled">Auto-sync enabled</label>
+            </div>
+            <div>
+              <label for="sync_interval" class="form-label">Override Sync Interval</label>
+              <div class="input-group">
+                <input type="number" class="form-control" id="sync_interval" name="sync_interval"
+                       min="1" placeholder="Use global setting"
+                       value="{{ (form_data.get('sync_interval') if form_data else (album.sync_interval if album and album.sync_interval else '')) }}">
+                <span class="input-group-text">min</span>
+              </div>
+              <div class="form-text">Leave blank to use the global sync interval from Settings.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: query builder -->
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">Search Criteria</span>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="jsonToggle">
+            <i class="bi bi-code-slash me-1"></i>Raw JSON
+          </button>
+        </div>
+        <div class="card-body">
+
+          <!-- Hidden input holds the actual JSON sent to the server -->
+          <input type="hidden" name="query_config" id="query_config"
+                 value='{{ album.query_config | tojson if album else "{}" }}'>
+
+          <!-- Visual builder -->
+          <div id="queryBuilder">
+
+            <div class="row g-3 mb-3">
+              <!-- People (AND) -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">People <small class="text-secondary fw-normal">(AND)</small></label>
+                <div class="chip-container" id="peopleChips" data-field="people"></div>
+                <div class="input-group input-group-sm mt-1">
+                  <input type="text" class="form-control" id="personInput" placeholder="Name or UUID">
+                  <button class="btn btn-outline-secondary" type="button" onclick="addChip('peopleChips','personInput')">Add</button>
+                </div>
+                <div class="form-check form-check-inline mt-1">
+                  <input class="form-check-input" type="checkbox" id="people_strict_mode" name="_people_strict_mode">
+                  <label class="form-check-label small" for="people_strict_mode">Strict (exact match)</label>
+                </div>
+              </div>
+
+              <!-- Any People (OR) -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Any People <small class="text-secondary fw-normal">(OR)</small></label>
+                <div class="chip-container" id="anyPeopleChips" data-field="any_people"></div>
+                <div class="input-group input-group-sm mt-1">
+                  <input type="text" class="form-control" id="anyPersonInput" placeholder="Name or UUID">
+                  <button class="btn btn-outline-secondary" type="button" onclick="addChip('anyPeopleChips','anyPersonInput')">Add</button>
+                </div>
+              </div>
+
+              <!-- Tags -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Tags</label>
+                <div class="chip-container" id="tagsChips" data-field="tags"></div>
+                <div class="input-group input-group-sm mt-1">
+                  <input type="text" class="form-control" id="tagInput" placeholder="Tag name or UUID">
+                  <button class="btn btn-outline-secondary" type="button" onclick="addChip('tagsChips','tagInput')">Add</button>
+                </div>
+              </div>
+
+              <!-- Countries -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Countries</label>
+                <div class="chip-container" id="countryChips" data-field="country"></div>
+                <div class="input-group input-group-sm mt-1">
+                  <input type="text" class="form-control" id="countryInput" placeholder="e.g. Egypt">
+                  <button class="btn btn-outline-secondary" type="button" onclick="addChip('countryChips','countryInput')">Add</button>
+                </div>
+              </div>
+
+              <!-- State -->
+              <div class="col-md-4">
+                <label for="stateInput" class="form-label fw-semibold">State</label>
+                <input type="text" class="form-control form-control-sm" id="stateInput" placeholder="e.g. California">
+              </div>
+
+              <!-- City -->
+              <div class="col-md-4">
+                <label for="cityInput" class="form-label fw-semibold">City</label>
+                <input type="text" class="form-control form-control-sm" id="cityInput" placeholder="e.g. Paris">
+              </div>
+
+              <!-- Path -->
+              <div class="col-md-4">
+                <label for="pathInput" class="form-label fw-semibold">Path substring</label>
+                <input type="text" class="form-control form-control-sm" id="pathInput" placeholder="e.g. Football">
+              </div>
+
+              <!-- Favorite -->
+              <div class="col-md-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="favoriteCheck">
+                  <label class="form-check-label" for="favoriteCheck">
+                    <i class="bi bi-heart-fill text-danger me-1"></i>Favorites only
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timespans -->
+            <div class="mb-2 d-flex justify-content-between align-items-center">
+              <label class="form-label mb-0 fw-semibold">Date Ranges</label>
+              <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimespan()">
+                <i class="bi bi-plus"></i> Add Range
+              </button>
+            </div>
+            <div id="timespanList" class="d-flex flex-column gap-2"></div>
+          </div>
+
+          <!-- Raw JSON editor (hidden by default) -->
+          <div id="jsonEditor" style="display:none">
+            <textarea class="form-control font-monospace" id="jsonTextarea" rows="10"
+                      placeholder='{ "country": "Egypt", "favorite": true }'></textarea>
+            <div class="form-text">Edit raw JSON query config. Changes sync back to the visual builder.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <a href="{{ url_for('albums.list_albums') }}" class="btn btn-secondary">Cancel</a>
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-{{ 'check-lg' if action == 'edit' else 'plus-lg' }} me-1"></i>
+      {{ 'Save Changes' if action == 'edit' else 'Create Album' }}
+    </button>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/albums.js') }}"></script>
+<script>
+// Bootstrap form from existing album data
+document.addEventListener('DOMContentLoaded', () => {
+  const raw = document.getElementById('query_config').value
+  try { loadQueryConfig(JSON.parse(raw)) } catch(e) {}
+
+  // Toggle sync options based on album type
+  document.querySelectorAll('[name=album_type]').forEach(r => {
+    r.addEventListener('change', e => {
+      const isDynamic = e.target.value === 'dynamic'
+      document.getElementById('syncOptions').style.display = isDynamic ? '' : 'none'
+      document.getElementById('typeHelp').textContent = isDynamic
+        ? 'Automatically synced on schedule.'
+        : 'Synced once (or manually). Media matching the criteria will be added/removed.'
+    })
+    r.dispatchEvent(new Event('change'))
+  })
+})
+</script>
+{% endblock %}
