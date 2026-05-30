@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # ---- runtime stage ----
 FROM python:3.12-slim
 LABEL maintainer="viranit" \
-      description="Immich Dynamic Albums — Web UI"
+      description="Immich Dynamic Albums \u2014 Web UI"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -21,6 +21,9 @@ RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 WORKDIR /app
 COPY --from=builder /install /install
 COPY . .
+
+# Compile translation catalogs (.po -> .mo) so Flask-Babel can serve them at runtime.
+RUN pybabel compile -d translations --statistics 2>/dev/null || true
 
 RUN chown -R appuser:appgroup /app
 USER appuser

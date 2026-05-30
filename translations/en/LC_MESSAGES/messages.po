@@ -1,0 +1,365 @@
+# English translations for Immich Dynamic Albums.
+# Copyright (C) 2024
+# This file is distributed under the same license as the Immich Dynamic Albums project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: immich-dynamic-albums 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Albums"
+msgstr "Albums"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "Logout"
+msgstr "Logout"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Sign in to manage your albums"
+msgstr "Sign in to manage your albums"
+
+msgid "Immich API Key"
+msgstr "Immich API Key"
+
+msgid "Immich URL"
+msgstr "Immich URL"
+
+msgid "API Key"
+msgstr "API Key"
+
+msgid "Your Immich API key"
+msgstr "Your Immich API key"
+
+msgid "Sign in"
+msgstr "Sign in"
+
+msgid "Single Sign-On (OIDC)"
+msgstr "Single Sign-On (OIDC)"
+
+msgid "Sign in with SSO"
+msgstr "Sign in with SSO"
+
+msgid "New Album"
+msgstr "New Album"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Auto-sync"
+msgstr "Auto-sync"
+
+msgid "Last Synced"
+msgstr "Last Synced"
+
+msgid "Immich Album"
+msgstr "Immich Album"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Dynamic"
+msgstr "Dynamic"
+
+msgid "Static"
+msgstr "Static"
+
+msgid "Sync now"
+msgstr "Sync now"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "No albums yet."
+msgstr "No albums yet."
+
+msgid "Create your first album"
+msgstr "Create your first album"
+
+msgid "Delete Album?"
+msgstr "Delete Album?"
+
+msgid "The album in Immich will not be deleted."
+msgstr "The album in Immich will not be deleted."
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Delete \"%(name)s\" from this app?"
+msgstr "Delete \"%(name)s\" from this app?"
+
+msgid "Create"
+msgstr "Create"
+
+msgid "Album"
+msgstr "Album"
+
+msgid "Album Details"
+msgstr "Album Details"
+
+msgid "Album Name"
+msgstr "Album Name"
+
+msgid "Album Type"
+msgstr "Album Type"
+
+msgid "Auto-sync enabled"
+msgstr "Auto-sync enabled"
+
+msgid "Override Sync Interval"
+msgstr "Override Sync Interval"
+
+msgid "Use global setting"
+msgstr "Use global setting"
+
+msgid "min"
+msgstr "min"
+
+msgid "Leave blank to use the global sync interval from Settings."
+msgstr "Leave blank to use the global sync interval from Settings."
+
+msgid "Search Criteria"
+msgstr "Search Criteria"
+
+msgid "Raw JSON"
+msgstr "Raw JSON"
+
+msgid "People (AND)"
+msgstr "People (AND)"
+
+msgid "Name or UUID"
+msgstr "Name or UUID"
+
+msgid "Add"
+msgstr "Add"
+
+msgid "Strict (exact match)"
+msgstr "Strict (exact match)"
+
+msgid "Any People (OR)"
+msgstr "Any People (OR)"
+
+msgid "Tags"
+msgstr "Tags"
+
+msgid "Tag name or UUID"
+msgstr "Tag name or UUID"
+
+msgid "Countries"
+msgstr "Countries"
+
+msgid "State"
+msgstr "State"
+
+msgid "City"
+msgstr "City"
+
+msgid "Path substring"
+msgstr "Path substring"
+
+msgid "Favorites only"
+msgstr "Favorites only"
+
+msgid "Date Ranges"
+msgstr "Date Ranges"
+
+msgid "Add Range"
+msgstr "Add Range"
+
+msgid "Edit raw JSON query config. Changes sync back to the visual builder."
+msgstr "Edit raw JSON query config. Changes sync back to the visual builder."
+
+msgid "Save Changes"
+msgstr "Save Changes"
+
+msgid "Create Album"
+msgstr "Create Album"
+
+msgid "Automatically synced on schedule."
+msgstr "Automatically synced on schedule."
+
+msgid "Synced once (or manually). Media matching the criteria will be added/removed."
+msgstr "Synced once (or manually). Media matching the criteria will be added/removed."
+
+msgid "Details"
+msgstr "Details"
+
+msgid "Enabled"
+msgstr "Enabled"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "(every %(interval)s min)"
+msgstr "(every %(interval)s min)"
+
+msgid "Never"
+msgstr "Never"
+
+msgid "Immich ID"
+msgstr "Immich ID"
+
+msgid "Not synced yet"
+msgstr "Not synced yet"
+
+msgid "Created"
+msgstr "Created"
+
+msgid "Sync Now"
+msgstr "Sync Now"
+
+msgid "Sync History"
+msgstr "Sync History"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Started"
+msgstr "Started"
+
+msgid "Duration"
+msgstr "Duration"
+
+msgid "Added"
+msgstr "Added"
+
+msgid "Removed"
+msgstr "Removed"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "success"
+msgstr "success"
+
+msgid "error"
+msgstr "error"
+
+msgid "running"
+msgstr "running"
+
+msgid "No sync history yet."
+msgstr "No sync history yet."
+
+msgid "Syncing\u2026"
+msgstr "Syncing\u2026"
+
+msgid "Test Connection"
+msgstr "Test Connection"
+
+msgid "Apply Schedule Now"
+msgstr "Apply Schedule Now"
+
+msgid "Scheduler Status"
+msgstr "Scheduler Status"
+
+msgid "Loading\u2026"
+msgstr "Loading\u2026"
+
+msgid "Save Settings"
+msgstr "Save Settings"
+
+msgid "Immich Connection"
+msgstr "Immich Connection"
+
+msgid "Immich Server URL"
+msgstr "Immich Server URL"
+
+msgid "The URL of your Immich instance (e.g. http://immich:2283)"
+msgstr "The URL of your Immich instance (e.g. http://immich:2283)"
+
+msgid "Authentication Method"
+msgstr "Authentication Method"
+
+msgid "Immich API Key only"
+msgstr "Immich API Key only"
+
+msgid "OIDC only"
+msgstr "OIDC only"
+
+msgid "Both"
+msgstr "Both"
+
+msgid "How users authenticate"
+msgstr "How users authenticate"
+
+msgid "Authentication"
+msgstr "Authentication"
+
+msgid "OIDC Issuer URL"
+msgstr "OIDC Issuer URL"
+
+msgid "e.g. https://auth.example.com/realms/myrealm"
+msgstr "e.g. https://auth.example.com/realms/myrealm"
+
+msgid "OIDC Client ID"
+msgstr "OIDC Client ID"
+
+msgid "OIDC Client Secret"
+msgstr "OIDC Client Secret"
+
+msgid "Enable Scheduled Sync"
+msgstr "Enable Scheduled Sync"
+
+msgid "Automatically sync dynamic albums on a schedule"
+msgstr "Automatically sync dynamic albums on a schedule"
+
+msgid "Global Sync Interval"
+msgstr "Global Sync Interval"
+
+msgid "minutes"
+msgstr "minutes"
+
+msgid "How often to sync all dynamic albums (in minutes)"
+msgstr "How often to sync all dynamic albums (in minutes)"
+
+msgid "Sync Schedule"
+msgstr "Sync Schedule"
+
+msgid "Invalid API key or Immich URL."
+msgstr "Invalid API key or Immich URL."
+
+msgid "Welcome, %(username)s!"
+msgstr "Welcome, %(username)s!"
+
+msgid "Successfully logged out."
+msgstr "Successfully logged out."
+
+msgid "Album \"%(name)s\" created successfully."
+msgstr "Album \"%(name)s\" created successfully."
+
+msgid "Album \"%(name)s\" updated successfully."
+msgstr "Album \"%(name)s\" updated successfully."
+
+msgid "Album \"%(name)s\" deleted."
+msgstr "Album \"%(name)s\" deleted."
+
+msgid "Invalid query configuration: %(error)s"
+msgstr "Invalid query configuration: %(error)s"
+
+msgid "Sync completed: %(added)s added, %(removed)s removed."
+msgstr "Sync completed: %(added)s added, %(removed)s removed."
+
+msgid "Sync failed: %(error)s"
+msgstr "Sync failed: %(error)s"
+
+msgid "Album not found."
+msgstr "Album not found."

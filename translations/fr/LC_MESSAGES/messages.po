@@ -1,0 +1,365 @@
+# French translations for Immich Dynamic Albums.
+# Copyright (C) 2024
+# This file is distributed under the same license as the Immich Dynamic Albums project.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: immich-dynamic-albums 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: French <fr@li.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Albums"
+msgstr "Albums"
+
+msgid "Settings"
+msgstr "Param\u00e8tres"
+
+msgid "Logout"
+msgstr "D\u00e9connexion"
+
+msgid "Login"
+msgstr "Connexion"
+
+msgid "Sign in to manage your albums"
+msgstr "Connectez-vous pour g\u00e9rer vos albums"
+
+msgid "Immich API Key"
+msgstr "Cl\u00e9 API Immich"
+
+msgid "Immich URL"
+msgstr "URL Immich"
+
+msgid "API Key"
+msgstr "Cl\u00e9 API"
+
+msgid "Your Immich API key"
+msgstr "Votre cl\u00e9 API Immich"
+
+msgid "Sign in"
+msgstr "Se connecter"
+
+msgid "Single Sign-On (OIDC)"
+msgstr "Authentification unique (OIDC)"
+
+msgid "Sign in with SSO"
+msgstr "Se connecter via SSO"
+
+msgid "New Album"
+msgstr "Nouvel album"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Auto-sync"
+msgstr "Synchronisation auto"
+
+msgid "Last Synced"
+msgstr "Derni\u00e8re synchro"
+
+msgid "Immich Album"
+msgstr "Album Immich"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Dynamic"
+msgstr "Dynamique"
+
+msgid "Static"
+msgstr "Statique"
+
+msgid "Sync now"
+msgstr "Synchroniser maintenant"
+
+msgid "Edit"
+msgstr "Modifier"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "No albums yet."
+msgstr "Aucun album pour l\u2019instant."
+
+msgid "Create your first album"
+msgstr "Cr\u00e9ez votre premier album"
+
+msgid "Delete Album?"
+msgstr "Supprimer l\u2019album\u00a0?"
+
+msgid "The album in Immich will not be deleted."
+msgstr "L\u2019album dans Immich ne sera pas supprim\u00e9."
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Delete \"%(name)s\" from this app?"
+msgstr "Supprimer \u00ab\u00a0%(name)s\u00a0\u00bb de cette application\u00a0?"
+
+msgid "Create"
+msgstr "Cr\u00e9er"
+
+msgid "Album"
+msgstr "Album"
+
+msgid "Album Details"
+msgstr "D\u00e9tails de l\u2019album"
+
+msgid "Album Name"
+msgstr "Nom de l\u2019album"
+
+msgid "Album Type"
+msgstr "Type d\u2019album"
+
+msgid "Auto-sync enabled"
+msgstr "Synchronisation automatique activ\u00e9e"
+
+msgid "Override Sync Interval"
+msgstr "Intervalle de synchro personnalis\u00e9"
+
+msgid "Use global setting"
+msgstr "Utiliser le param\u00e8tre global"
+
+msgid "min"
+msgstr "min"
+
+msgid "Leave blank to use the global sync interval from Settings."
+msgstr "Laisser vide pour utiliser l\u2019intervalle global d\u00e9fini dans Param\u00e8tres."
+
+msgid "Search Criteria"
+msgstr "Crit\u00e8res de recherche"
+
+msgid "Raw JSON"
+msgstr "JSON brut"
+
+msgid "People (AND)"
+msgstr "Personnes (ET)"
+
+msgid "Name or UUID"
+msgstr "Nom ou UUID"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Strict (exact match)"
+msgstr "Strict (correspondance exacte)"
+
+msgid "Any People (OR)"
+msgstr "N\u2019importe quelle personne (OU)"
+
+msgid "Tags"
+msgstr "\u00c9tiquettes"
+
+msgid "Tag name or UUID"
+msgstr "Nom d\u2019\u00e9tiquette ou UUID"
+
+msgid "Countries"
+msgstr "Pays"
+
+msgid "State"
+msgstr "R\u00e9gion"
+
+msgid "City"
+msgstr "Ville"
+
+msgid "Path substring"
+msgstr "Sous-cha\u00eene du chemin"
+
+msgid "Favorites only"
+msgstr "Favoris uniquement"
+
+msgid "Date Ranges"
+msgstr "Plages de dates"
+
+msgid "Add Range"
+msgstr "Ajouter une plage"
+
+msgid "Edit raw JSON query config. Changes sync back to the visual builder."
+msgstr "Modifier la configuration JSON brute. Les modifications se r\u00e9percutent sur le constructeur visuel."
+
+msgid "Save Changes"
+msgstr "Enregistrer les modifications"
+
+msgid "Create Album"
+msgstr "Cr\u00e9er l\u2019album"
+
+msgid "Automatically synced on schedule."
+msgstr "Synchronis\u00e9 automatiquement selon le planning."
+
+msgid "Synced once (or manually). Media matching the criteria will be added/removed."
+msgstr "Synchronis\u00e9 une fois (ou manuellement). Les m\u00e9dias correspondants seront ajout\u00e9s/supprim\u00e9s."
+
+msgid "Details"
+msgstr "D\u00e9tails"
+
+msgid "Enabled"
+msgstr "Activ\u00e9"
+
+msgid "Disabled"
+msgstr "D\u00e9sactiv\u00e9"
+
+msgid "(every %(interval)s min)"
+msgstr "(toutes les %(interval)s\u00a0min)"
+
+msgid "Never"
+msgstr "Jamais"
+
+msgid "Immich ID"
+msgstr "Identifiant Immich"
+
+msgid "Not synced yet"
+msgstr "Pas encore synchronis\u00e9"
+
+msgid "Created"
+msgstr "Cr\u00e9\u00e9"
+
+msgid "Sync Now"
+msgstr "Synchroniser maintenant"
+
+msgid "Sync History"
+msgstr "Historique de synchronisation"
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Started"
+msgstr "D\u00e9but\u00e9"
+
+msgid "Duration"
+msgstr "Dur\u00e9e"
+
+msgid "Added"
+msgstr "Ajout\u00e9s"
+
+msgid "Removed"
+msgstr "Supprim\u00e9s"
+
+msgid "Error"
+msgstr "Erreur"
+
+msgid "success"
+msgstr "succ\u00e8s"
+
+msgid "error"
+msgstr "erreur"
+
+msgid "running"
+msgstr "en cours"
+
+msgid "No sync history yet."
+msgstr "Aucun historique de synchronisation."
+
+msgid "Syncing\u2026"
+msgstr "Synchronisation\u2026"
+
+msgid "Test Connection"
+msgstr "Tester la connexion"
+
+msgid "Apply Schedule Now"
+msgstr "Appliquer le planning maintenant"
+
+msgid "Scheduler Status"
+msgstr "\u00c9tat du planificateur"
+
+msgid "Loading\u2026"
+msgstr "Chargement\u2026"
+
+msgid "Save Settings"
+msgstr "Enregistrer les param\u00e8tres"
+
+msgid "Immich Connection"
+msgstr "Connexion Immich"
+
+msgid "Immich Server URL"
+msgstr "URL du serveur Immich"
+
+msgid "The URL of your Immich instance (e.g. http://immich:2283)"
+msgstr "L\u2019URL de votre instance Immich (ex\u00a0: http://immich:2283)"
+
+msgid "Authentication Method"
+msgstr "M\u00e9thode d\u2019authentification"
+
+msgid "Immich API Key only"
+msgstr "Cl\u00e9 API Immich uniquement"
+
+msgid "OIDC only"
+msgstr "OIDC uniquement"
+
+msgid "Both"
+msgstr "Les deux"
+
+msgid "How users authenticate"
+msgstr "Comment les utilisateurs s\u2019authentifient"
+
+msgid "Authentication"
+msgstr "Authentification"
+
+msgid "OIDC Issuer URL"
+msgstr "URL de l\u2019\u00e9metteur OIDC"
+
+msgid "e.g. https://auth.example.com/realms/myrealm"
+msgstr "ex\u00a0: https://auth.example.com/realms/myrealm"
+
+msgid "OIDC Client ID"
+msgstr "Identifiant client OIDC"
+
+msgid "OIDC Client Secret"
+msgstr "Secret client OIDC"
+
+msgid "Enable Scheduled Sync"
+msgstr "Activer la synchronisation planifi\u00e9e"
+
+msgid "Automatically sync dynamic albums on a schedule"
+msgstr "Synchroniser automatiquement les albums dynamiques selon un planning"
+
+msgid "Global Sync Interval"
+msgstr "Intervalle de synchronisation global"
+
+msgid "minutes"
+msgstr "minutes"
+
+msgid "How often to sync all dynamic albums (in minutes)"
+msgstr "Fr\u00e9quence de synchronisation de tous les albums dynamiques (en minutes)"
+
+msgid "Sync Schedule"
+msgstr "Planning de synchronisation"
+
+msgid "Invalid API key or Immich URL."
+msgstr "Cl\u00e9 API ou URL Immich invalide."
+
+msgid "Welcome, %(username)s!"
+msgstr "Bienvenue, %(username)s\u00a0!"
+
+msgid "Successfully logged out."
+msgstr "D\u00e9connexion r\u00e9ussie."
+
+msgid "Album \"%(name)s\" created successfully."
+msgstr "Album \u00ab\u00a0%(name)s\u00a0\u00bb cr\u00e9\u00e9 avec succ\u00e8s."
+
+msgid "Album \"%(name)s\" updated successfully."
+msgstr "Album \u00ab\u00a0%(name)s\u00a0\u00bb mis \u00e0 jour avec succ\u00e8s."
+
+msgid "Album \"%(name)s\" deleted."
+msgstr "Album \u00ab\u00a0%(name)s\u00a0\u00bb supprim\u00e9."
+
+msgid "Invalid query configuration: %(error)s"
+msgstr "Configuration de requ\u00eate invalide\u00a0: %(error)s"
+
+msgid "Sync completed: %(added)s added, %(removed)s removed."
+msgstr "Synchronisation termin\u00e9e\u00a0: %(added)s ajout\u00e9s, %(removed)s supprim\u00e9s."
+
+msgid "Sync failed: %(error)s"
+msgstr "\u00c9chec de la synchronisation\u00a0: %(error)s"
+
+msgid "Album not found."
+msgstr "Album introuvable."
