@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Settings — Immich Dynamic Albums{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="mb-0"><i class="bi bi-gear-fill me-2 text-primary"></i>Settings</h4>
+</div>
+
+<form method="POST" action="{{ url_for('settings.settings') }}" id="settingsForm">
+<div class="row g-4">
+
+  {% for section, items in settings_definitions | groupby('section') %}
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header fw-semibold">
+        {% if section == 'Immich Connection' %}<i class="bi bi-plug-fill text-warning me-2"></i>
+        {% elif section == 'Authentication' %}<i class="bi bi-shield-lock-fill text-info me-2"></i>
+        {% elif section == 'Sync Schedule' %}<i class="bi bi-clock-fill text-success me-2"></i>
+        {% else %}<i class="bi bi-sliders me-2"></i>{% endif %}
+        {{ section }}
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for s in items %}
+          <div class="col-md-{{ s.col_width | default(6) }}">
+            {% set cur_val = current_values.get(s.key, s.default | default('')) %}
+            {% if s.type == 'bool' %}
+            <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" role="switch"
+                     id="s_{{ s.key }}" name="{{ s.key }}"
+                     {% if cur_val in ('1', 'true', True) %}checked{% endif %}>
+              <label class="form-check-label" for="s_{{ s.key }}">{{ s.label }}</label>
+              {% if s.help %}<div class="form-text">{{ s.help }}</div>{% endif %}
+            </div>
+
+            {% elif s.type == 'select' %}
+            <label for="s_{{ s.key }}" class="form-label">{{ s.label }}</label>
+            <select class="form-select form-select-sm" id="s_{{ s.key }}" name="{{ s.key }}"
+                    {% if s.dependent_show is defined %}data-depend-show="{{ s.dependent_show }}"{% endif %}>
+              {% for opt_val, opt_label in s.choices %}
+              <option value="{{ opt_val }}" {% if cur_val == opt_val %}selected{% endif %}>{{ opt_label }}</option>
+              {% endfor %}
+            </select>
+            {% if s.help %}<div class="form-text">{{ s.help }}</div>{% endif %}
+
+            {% elif s.type == 'password' %}
+            <label for="s_{{ s.key }}" class="form-label">{{ s.label }}</label>
+            <div class="input-group input-group-sm">
+              <input type="password" class="form-control" id="s_{{ s.key }}" name="{{ s.key }}"
+                     value="{{ cur_val }}" autocomplete="new-password">
+              <button class="btn btn-outline-secondary" type="button"
+                      onclick="togglePasswordVisibility('s_{{ s.key }}')">
+                <i class="bi bi-eye" id="eye_s_{{ s.key }}"></i>
+              </button>
+            </div>
+            {% if s.help %}<div class="form-text">{{ s.help }}</div>{% endif %}
+
+            {% elif s.type == 'number' %}
+            <label for="s_{{ s.key }}" class="form-label">{{ s.label }}</label>
+            <div class="input-group input-group-sm">
+              <input type="number" class="form-control" id="s_{{ s.key }}" name="{{ s.key }}"
+                     value="{{ cur_val }}"
+                     {% if s.min is defined %}min="{{ s.min }}"{% endif %}
+                     {% if s.max is defined %}max="{{ s.max }}"{% endif %}>
+              {% if s.unit %}<span class="input-group-text">{{ s.unit }}</span>{% endif %}
+            </div>
+            {% if s.help %}<div class="form-text">{{ s.help }}</div>{% endif %}
+
+            {% else %}
+            <label for="s_{{ s.key }}" class="form-label">{{ s.label }}</label>
+            <input type="text" class="form-control form-control-sm" id="s_{{ s.key }}" name="{{ s.key }}"
+                   value="{{ cur_val }}"
+                   {% if s.placeholder is defined %}placeholder="{{ s.placeholder }}"{% endif %}
+                   {% if s.required is defined and s.required %}required{% endif %}>
+            {% if s.help %}<div class="form-text">{{ s.help }}</div>{% endif %}
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Section-specific action buttons -->
+        {% if section == 'Immich Connection' %}
+        <div class="mt-3">
+          <button type="button" class="btn btn-sm btn-outline-warning" id="testConnectionBtn">
+            <i class="bi bi-plug me-1"></i>Test Connection
+          </button>
+          <span id="testConnectionResult" class="ms-2 small"></span>
+        </div>
+        {% endif %}
+
+        {% if section == 'Sync Schedule' %}
+        <div class="mt-3">
+          <button type="button" class="btn btn-sm btn-outline-success" id="rescheduleBtn">
+            <i class="bi bi-arrow-clockwise me-1"></i>Apply Schedule Now
+          </button>
+          <span id="rescheduleResult" class="ms-2 small"></span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Scheduler status -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-cpu me-2 text-secondary"></i>Scheduler Status
+      </div>
+      <div class="card-body">
+        <div id="schedulerStatus" class="text-secondary small">
+          <i class="bi bi-hourglass-split"></i> Loading…
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="d-flex justify-content-end mt-4">
+  <button type="submit" class="btn btn-primary">
+    <i class="bi bi-check-lg me-1"></i>Save Settings
+  </button>
+</div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}
