@@ -1,5 +1,8 @@
 /**
  * Settings page interactivity: test connection, reschedule, scheduler status, password toggles.
+ *
+ * All API calls return JSON:API 1.0 documents. Helpers below extract the
+ * relevant data from the document before rendering results.
  */
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -34,10 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ immich_url: url, immich_api_key: key }),
         });
-        const data = await res.json();
-        result.innerHTML = data.ok
-          ? '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>' + escHtml(data.message) + '</span>'
-          : '<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>' + escHtml(data.error) + '</span>';
+        // Response is a JSON:API document; attributes live at doc.data.attributes
+        const doc = await res.json();
+        const attrs = jsonapiAttrs(doc);
+        result.innerHTML = (!doc.errors && attrs.ok)
+          ? '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>' + escHtml(attrs.message) + '</span>'
+          : '<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>' + escHtml(jsonapiFirstError(doc) || attrs.message) + '</span>';
       } catch (e) {
         result.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Request failed</span>';
       } finally {
@@ -57,10 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
       rescheduleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Applying…';
       try {
         const res = await fetch('/api/settings/reschedule', { method: 'POST' });
-        const data = await res.json();
-        result.innerHTML = data.ok
-          ? '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>' + escHtml(data.message) + '</span>'
-          : '<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>' + escHtml(data.error) + '</span>';
+        // Successful reschedule returns a meta-only document; errors return errors array
+        const doc = await res.json();
+        const ok = !doc.errors;
+        result.innerHTML = ok
+          ? '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>' + escHtml(doc.meta?.message || 'Done') + '</span>'
+          : '<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>' + escHtml(jsonapiFirstError(doc)) + '</span>';
       } catch (e) {
         result.innerHTML = '<span class="text-danger">Request failed</span>';
       } finally {
@@ -76,12 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!el) return;
     try {
       const res = await fetch('/api/scheduler/status');
-      const data = await res.json();
-      if (!data.running) {
+      // Response: { data: { type: 'scheduler-status', id: 'default', attributes: { running, jobs } } }
+      const doc = await res.json();
+      const attrs = jsonapiAttrs(doc);
+      if (!attrs.running) {
         el.innerHTML = '<span class="text-secondary"><i class="bi bi-pause-circle me-1"></i>Scheduler not running</span>';
         return;
       }
-      const jobs = (data.jobs || []);
+      const jobs = attrs.jobs || [];
       if (jobs.length === 0) {
         el.innerHTML = '<span class="text-warning"><i class="bi bi-clock me-1"></i>Scheduler running, no jobs scheduled</span>';
         return;
@@ -99,7 +108,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-// ---- Utilities ---------------------------------------------------------------
+// ---- JSON:API document helpers ----------------------------------------------
+
+/**
+ * Extract the ``attributes`` object from a JSON:API single-resource document.
+ * Returns an empty object when the document has no primary data or is an
+ * errors document.
+ */
+function jsonapiAttrs(doc) {
+  return doc?.data?.attributes || {};
+}
+
+/**
+ * Return the ``detail`` of the first error in a JSON:API errors document,
+ * or an empty string when there are no errors.
+ */
+function jsonapiFirstError(doc) {
+  return doc?.errors?.[0]?.detail || '';
+}
+
+// ---- Utilities --------------------------------------------------------------
 
 function togglePasswordVisibility(inputId) {
   const input = document.getElementById(inputId);
