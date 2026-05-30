@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="{{ current_locale }}" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,17 +26,37 @@
         <li class="nav-item">
           <a class="nav-link {% if request.blueprint == 'albums' %}active{% endif %}"
              href="{{ url_for('albums.list_albums') }}">
-            <i class="bi bi-images"></i> Albums
+            <i class="bi bi-images"></i> {{ _('Albums') }}
           </a>
         </li>
         <li class="nav-item">
           <a class="nav-link {% if request.blueprint == 'settings' %}active{% endif %}"
              href="{{ url_for('settings.settings') }}">
-            <i class="bi bi-gear-fill"></i> Settings
+            <i class="bi bi-gear-fill"></i> {{ _('Settings') }}
           </a>
         </li>
       </ul>
       <ul class="navbar-nav">
+        <!-- Language switcher (only shown when more than one language is configured) -->
+        {% if languages | length > 1 %}
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-translate"></i>
+            {{ languages.get(current_locale, current_locale) }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            {% for code, name in languages.items() %}
+            <li>
+              <a class="dropdown-item {% if current_locale == code %}active{% endif %}"
+                 href="{{ url_for('set_language', locale=code) }}">
+                {{ name }}
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        </li>
+        {% endif %}
+        <!-- User menu -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
             <i class="bi bi-person-circle"></i> {{ current_user.username }}
@@ -50,7 +70,7 @@
             <li><hr class="dropdown-divider"></li>
             <li>
               <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                <i class="bi bi-box-arrow-right"></i> Logout
+                <i class="bi bi-box-arrow-right"></i> {{ _('Logout') }}
               </a>
             </li>
           </ul>

@@ -1,29 +1,31 @@
 {% extends 'base.html' %}
-{% block title %}Settings — Immich Dynamic Albums{% endblock %}
+{% block title %}{{ _('Settings') }} — Immich Dynamic Albums{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="mb-0"><i class="bi bi-gear-fill me-2 text-primary"></i>Settings</h4>
+  <h4 class="mb-0"><i class="bi bi-gear-fill me-2 text-primary"></i>{{ _('Settings') }}</h4>
 </div>
 
 <form method="POST" action="{{ url_for('settings.settings') }}" id="settingsForm">
 <div class="row g-4">
 
+  {# Group definitions by the plain-string section key; use section_label for display. #}
   {% for section, items in settings_definitions | groupby('section') %}
+  {% set section_label = items[0].section_label %}
   <div class="col-12">
     <div class="card">
       <div class="card-header fw-semibold">
-        {% if section == 'Immich Connection' %}<i class="bi bi-plug-fill text-warning me-2"></i>
-        {% elif section == 'Authentication' %}<i class="bi bi-shield-lock-fill text-info me-2"></i>
-        {% elif section == 'Sync Schedule' %}<i class="bi bi-clock-fill text-success me-2"></i>
+        {% if section == 'immich_connection' %}<i class="bi bi-plug-fill text-warning me-2"></i>
+        {% elif section == 'authentication' %}<i class="bi bi-shield-lock-fill text-info me-2"></i>
+        {% elif section == 'sync_schedule' %}<i class="bi bi-clock-fill text-success me-2"></i>
         {% else %}<i class="bi bi-sliders me-2"></i>{% endif %}
-        {{ section }}
+        {{ section_label }}
       </div>
       <div class="card-body">
         <div class="row g-3">
           {% for s in items %}
           <div class="col-md-{{ s.col_width | default(6) }}">
             {% set cur_val = current_values.get(s.key, s.default | default('')) %}
-            {% if s.type == 'bool' %}
+            {% if s.type == 'checkbox' %}
             <div class="form-check form-switch mt-2">
               <input class="form-check-input" type="checkbox" role="switch"
                      id="s_{{ s.key }}" name="{{ s.key }}"
@@ -34,8 +36,7 @@
 
             {% elif s.type == 'select' %}
             <label for="s_{{ s.key }}" class="form-label">{{ s.label }}</label>
-            <select class="form-select form-select-sm" id="s_{{ s.key }}" name="{{ s.key }}"
-                    {% if s.dependent_show is defined %}data-depend-show="{{ s.dependent_show }}"{% endif %}>
+            <select class="form-select form-select-sm" id="s_{{ s.key }}" name="{{ s.key }}">
               {% for opt_val, opt_label in s.choices %}
               <option value="{{ opt_val }}" {% if cur_val == opt_val %}selected{% endif %}>{{ opt_label }}</option>
               {% endfor %}
@@ -78,19 +79,19 @@
         </div>
 
         <!-- Section-specific action buttons -->
-        {% if section == 'Immich Connection' %}
+        {% if section == 'immich_connection' %}
         <div class="mt-3">
           <button type="button" class="btn btn-sm btn-outline-warning" id="testConnectionBtn">
-            <i class="bi bi-plug me-1"></i>Test Connection
+            <i class="bi bi-plug me-1"></i>{{ _('Test Connection') }}
           </button>
           <span id="testConnectionResult" class="ms-2 small"></span>
         </div>
         {% endif %}
 
-        {% if section == 'Sync Schedule' %}
+        {% if section == 'sync_schedule' %}
         <div class="mt-3">
           <button type="button" class="btn btn-sm btn-outline-success" id="rescheduleBtn">
-            <i class="bi bi-arrow-clockwise me-1"></i>Apply Schedule Now
+            <i class="bi bi-arrow-clockwise me-1"></i>{{ _('Apply Schedule Now') }}
           </button>
           <span id="rescheduleResult" class="ms-2 small"></span>
         </div>
@@ -104,11 +105,11 @@
   <div class="col-12">
     <div class="card">
       <div class="card-header fw-semibold">
-        <i class="bi bi-cpu me-2 text-secondary"></i>Scheduler Status
+        <i class="bi bi-cpu me-2 text-secondary"></i>{{ _('Scheduler Status') }}
       </div>
       <div class="card-body">
         <div id="schedulerStatus" class="text-secondary small">
-          <i class="bi bi-hourglass-split"></i> Loading…
+          <i class="bi bi-hourglass-split"></i> {{ _('Loading…') }}
         </div>
       </div>
     </div>
@@ -118,7 +119,7 @@
 
 <div class="d-flex justify-content-end mt-4">
   <button type="submit" class="btn btn-primary">
-    <i class="bi bi-check-lg me-1"></i>Save Settings
+    <i class="bi bi-check-lg me-1"></i>{{ _('Save Settings') }}
   </button>
 </div>
 </form>

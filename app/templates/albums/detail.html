@@ -7,7 +7,7 @@
   </a>
   <h4 class="mb-0">{{ album.name }}</h4>
   <span class="badge rounded-pill badge-{{ album.album_type }} ms-1">
-    {{ album.album_type | capitalize }}
+    {% if album.album_type == 'dynamic' %}{{ _('Dynamic') }}{% else %}{{ _('Static') }}{% endif %}
   </span>
 </div>
 
@@ -15,35 +15,39 @@
   <!-- Info card -->
   <div class="col-lg-4">
     <div class="card mb-3">
-      <div class="card-header fw-semibold">Details</div>
+      <div class="card-header fw-semibold">{{ _('Details') }}</div>
       <div class="card-body">
         <dl class="row mb-0 small">
-          <dt class="col-5 text-secondary">Type</dt>
-          <dd class="col-7">{{ album.album_type | capitalize }}</dd>
+          <dt class="col-5 text-secondary">{{ _('Type') }}</dt>
+          <dd class="col-7">
+            {% if album.album_type == 'dynamic' %}{{ _('Dynamic') }}{% else %}{{ _('Static') }}{% endif %}
+          </dd>
 
-          <dt class="col-5 text-secondary">Auto-sync</dt>
+          <dt class="col-5 text-secondary">{{ _('Auto-sync') }}</dt>
           <dd class="col-7">
             {% if album.album_type == 'dynamic' %}
-              {{ 'Enabled' if album.sync_enabled else 'Disabled' }}
-              {% if album.sync_interval %} (every {{ album.sync_interval }} min){% endif %}
+              {{ _('Enabled') if album.sync_enabled else _('Disabled') }}
+              {% if album.sync_interval %}
+                {{ _('(every %(interval)s min)', interval=album.sync_interval) }}
+              {% endif %}
             {% else %}&mdash;{% endif %}
           </dd>
 
-          <dt class="col-5 text-secondary">Last Synced</dt>
+          <dt class="col-5 text-secondary">{{ _('Last Synced') }}</dt>
           <dd class="col-7">
             {% if album.last_synced %}
               {{ album.last_synced.strftime('%Y-%m-%d %H:%M UTC') }}
-            {% else %}<em class="text-secondary">Never</em>{% endif %}
+            {% else %}<em class="text-secondary">{{ _('Never') }}</em>{% endif %}
           </dd>
 
-          <dt class="col-5 text-secondary">Immich ID</dt>
+          <dt class="col-5 text-secondary">{{ _('Immich ID') }}</dt>
           <dd class="col-7">
             {% if album.immich_album_id %}
               <code class="small">{{ album.immich_album_id }}</code>
-            {% else %}<em class="text-secondary">Not synced yet</em>{% endif %}
+            {% else %}<em class="text-secondary">{{ _('Not synced yet') }}</em>{% endif %}
           </dd>
 
-          <dt class="col-5 text-secondary">Created</dt>
+          <dt class="col-5 text-secondary">{{ _('Created') }}</dt>
           <dd class="col-7">{{ album.created_at.strftime('%Y-%m-%d') }}</dd>
         </dl>
       </div>
@@ -51,19 +55,19 @@
 
     <!-- Actions -->
     <div class="card">
-      <div class="card-header fw-semibold">Actions</div>
+      <div class="card-header fw-semibold">{{ _('Actions') }}</div>
       <div class="card-body d-flex flex-column gap-2">
         <form method="POST" action="{{ url_for('albums.sync_album', album_id=album.id) }}" id="syncForm">
           <button type="submit" class="btn btn-success w-100" id="syncBtn">
-            <i class="bi bi-arrow-repeat me-1"></i>Sync Now
+            <i class="bi bi-arrow-repeat me-1"></i>{{ _('Sync Now') }}
           </button>
         </form>
         <a href="{{ url_for('albums.edit_album', album_id=album.id) }}" class="btn btn-outline-secondary w-100">
-          <i class="bi bi-pencil me-1"></i>Edit
+          <i class="bi bi-pencil me-1"></i>{{ _('Edit') }}
         </a>
         <button type="button" class="btn btn-outline-danger w-100"
                 data-bs-toggle="modal" data-bs-target="#deleteModal">
-          <i class="bi bi-trash3 me-1"></i>Delete
+          <i class="bi bi-trash3 me-1"></i>{{ _('Delete') }}
         </button>
       </div>
     </div>
@@ -72,25 +76,25 @@
   <!-- Query config & sync history -->
   <div class="col-lg-8">
     <div class="card mb-3">
-      <div class="card-header fw-semibold">Search Criteria</div>
+      <div class="card-header fw-semibold">{{ _('Search Criteria') }}</div>
       <div class="card-body">
         <pre class="mb-0 small"><code>{{ album.query_config | tojson(indent=2) }}</code></pre>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-header fw-semibold">Sync History</div>
+      <div class="card-header fw-semibold">{{ _('Sync History') }}</div>
       {% if sync_logs %}
       <div class="table-responsive">
         <table class="table table-sm align-middle mb-0 sync-log-table">
           <thead class="table-dark">
             <tr>
-              <th>Status</th>
-              <th>Started</th>
-              <th>Duration</th>
-              <th>Added</th>
-              <th>Removed</th>
-              <th>Error</th>
+              <th>{{ _('Status') }}</th>
+              <th>{{ _('Started') }}</th>
+              <th>{{ _('Duration') }}</th>
+              <th>{{ _('Added') }}</th>
+              <th>{{ _('Removed') }}</th>
+              <th>{{ _('Error') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -98,7 +102,7 @@
             <tr>
               <td>
                 <span class="status-dot {{ log.status }}"></span>
-                {{ log.status | capitalize }}
+                {{ _(log.status) }}
               </td>
               <td class="small text-secondary">{{ log.started_at.strftime('%Y-%m-%d %H:%M') }}</td>
               <td class="small text-secondary">
@@ -122,7 +126,7 @@
       </div>
       {% else %}
       <div class="card-body text-secondary text-center">
-        <i class="bi bi-clock-history"></i> No sync history yet.
+        <i class="bi bi-clock-history"></i> {{ _('No sync history yet.') }}
       </div>
       {% endif %}
     </div>
@@ -134,17 +138,17 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Delete Album?</h5>
+        <h5 class="modal-title">{{ _('Delete Album?') }}</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <p>Delete <strong>{{ album.name }}</strong> from this app?</p>
-        <p class="text-secondary small">The album in Immich will <em>not</em> be deleted.</p>
+        <p>{{ _('Delete "%(name)s" from this app?', name=album.name) }}</p>
+        <p class="text-secondary small">{{ _('The album in Immich will not be deleted.') }}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
         <form method="POST" action="{{ url_for('albums.delete_album', album_id=album.id) }}">
-          <button type="submit" class="btn btn-danger"><i class="bi bi-trash3 me-1"></i>Delete</button>
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash3 me-1"></i>{{ _('Delete') }}</button>
         </form>
       </div>
     </div>
@@ -154,11 +158,10 @@
 
 {% block extra_js %}
 <script>
-// Show spinner on sync
 document.getElementById('syncForm').addEventListener('submit', () => {
-  const btn = document.getElementById('syncBtn')
-  btn.disabled = true
-  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Syncing…'
-})
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>{{ _('Syncing…') | e }}';
+});
 </script>
 {% endblock %}
