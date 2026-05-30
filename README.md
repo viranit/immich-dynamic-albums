@@ -1,160 +1,170 @@
-# immich-dynamic-albums
+# Immich Dynamic Albums — Web UI
 
-Stop-gap solution for automatically creating and maintaining dynamic albums, until they are natively supported in Immich.
-Dynamic albums are albums where the assets are based on some query or a rule, for example - my `favorited` pictures in `Italy` in `2023`, or all pictures of my `wife` and `me`.
-Manually maintaining such albums is very tedious, hence the need for some automated way of doing it.
-This has been requested in https://github.com/immich-app/immich/discussions/1673, but as of January 2024 it is not natively supported in Immich.
+A self-hosted web application for creating and managing **dynamic** and **static** albums in
+[Immich](https://immich.app/), with a Bootstrap 5 UI, scheduled syncing, and flexible authentication.
 
-The current version should work with any fairly recent Immich version, but it has only been tested with v1.125.6.
+> **Forked from** [kvalev/immich-dynamic-albums](https://github.com/kvalev/immich-dynamic-albums)
+> and extended into a full web application.
 
-## Configuration
+---
 
-Besides few standard configuration options (such as Immich URL and API key), the main configuration is a json file, describing the albums to be maintained - the name of the album and the search query to be used to populate the album. Here is an example showcasing all configuration features:
+## Features
 
-```json
-[
-    {
-        # Search people by name (beware if you have people with identical names)
-        "name": "Family pictures",
-        "query": {
-            "people": ["Me", "Wife", "Baby"]
-        }
-    },
-    {
-        # Search people by uuid
-        "name": "Baby",
-        "query": {
-            "people": ["ee1667b6-c502-47a8-be0c-cb55be494321"]
-        }
-    },
-    {
-        # Search people by mixing names and uuids
-        # Using 'people_strict_mode' will pick the assets where only the two people are tagged.
-        # Assets that include any additional tagged faces will be excluded.
-        "name": "Me & Wife",
-        "query": {
-            "people": ["Me", "35cb0ab8-24d2-4c76-bf8f-86101c867dc8"],
-            "people_strict_mode": true
-        }
-    },
-    {
-        # Search tags by mixing names and uuids
-        "name": "My awesome vacation",
-        "query": {
-            "tags": ["vacation1", "545cf3a7-9f67-4028-9ed2-54bff6508052"]
-        }
-    },
-    {
-        # Search by country, favorite flag and a timespan
-        "name": "Best of Egypt 2021",
-        "query": {
-            "country": "Egypt",
-            "favorite": true,
-            "timespan": {
-                "start": "2021-05-01",
-                "end": "2021-05-10"
-            }
-        }
-    },
-    {
-        # Search by multiple countries (names should match the ones in Immich)
-        "name": "Best of Southeast Asia 2022",
-        "query": {
-            "country": ["Thailand", "Laos", "Cambodia", "Malaysia"],
-            "favorite": true,
-            "timespan": {
-                "start": "2022-07-20",
-                "end": "2022-08-25"
-            }
-        }
-    },
-    {
-        # Search by multiple timespans
-        "name": "Some random event",
-        "query": {
-            "timespan": [
-                {"start": "2024-06-01", "end": "2024-06-03"},
-                {"start": "2025-01-15", "end": "2025-01-20"}
-            ]
-        }
-    },
-    {
-        # Search by path substring
-        "name": "All visited football games",
-        "query": {
-            "path": "Football"
-        }
-    },
-    {
-        # Search for assets containing ANY of the specified people (OR logic)
-        "name": "Me or Wife",
-        "query": {
-            "any_people": ["Me", "Wife"]
-        }
-    }
-]
-```
+| Feature | Detail |
+|---|---|
+| **Dynamic albums** | Automatically synced on a configurable schedule |
+| **Static albums** | Synced once (or manually) against a saved query |
+| **Query builder** | Visual UI: people, tags, countries, date ranges, favorites, path filters |
+| **Authentication** | Immich API key **and/or** OIDC / SSO |
+| **Settings UI** | All environment variables configurable via the web UI |
+| **Sync history** | Per-album audit log of every sync run |
+| **Scheduler** | APScheduler—no cron daemon needed |
+| **Docker-ready** | Multi-stage image + docker-compose with PostgreSQL |
 
-Beware that if you specify the name of an existing album, it will be overwritten. If you remove some of the albums from the config, they will not be deleted in immich - you will have to do it manually.
+---
 
+## Quick Start (Docker Compose)
 
-## Usage
-
-### Docker Compose
-
-```yaml
-services:
-
-    immich-server:
-        container_name: immich_server
-        ...
-
-    immich-dynamic-albums:
-        image: ghcr.io/kvalev/immich-dynamic-albums:${IMMICH_DYNAMIC_ALBUMS_VERSION:-latest}
-        restart: unless-stopped
-        volumes:
-            - PATH_TO_CONFIG_JSON_FILE:/config/dynamic-albums.json:ro
-        environment:
-            IMMICH_URL: http://immich_server:2283/
-            IMMICH_API_KEY: API_KEY
-            CONFIG_FILE: /config/dynamic-albums.json
-            SCHEDULE_INTERVAL: 1440 # 1440 minutes, meaning once per day
-            START_DELAY: 120 # 2 minutes which gives the immich instance some time to startup
-            PYTHONUNBUFFERED: True # ensure stdout is flushed on every print
-        env_file:
-            - .env
-        depends_on:
-            immich-server:
-                condition: service_healthy
-```
-
-### Docker
-
-```sh
-docker run --rm \
-  -v ./config/dynamic-albums.json:/config/dynamic-albums.json:ro
-  -e IMMICH_URL="http://immich_server:2283/" \
-  -e IMMICH_API_KEY="API_KEY" \
-  -e CONFIG_FILE="/config/dynamic-albums.json" \
-  -e SCHEDULE_INTERVAL="1440" \
-  ghcr.io/kvalev/immich-dynamic-albums:latest
-```
-
-
-### CLI
-
-Clone this repository and install the dependencies:
-
-```sh
-git clone git@github.com:kvalev/immich-dynamic-albums.git
+```bash
+# 1. Clone
+git clone https://github.com/viranit/immich-dynamic-albums.git
 cd immich-dynamic-albums
+
+# 2. Configure
+cp .env.example .env
+# Edit .env — set SECRET_KEY and IMMICH_URL at minimum
+
+# 3. Launch
+docker compose up -d
+
+# 4. Open http://localhost:5000 and log in with your Immich API key
+```
+
+---
+
+## Environment Variables
+
+All variables can also be set from **Settings** inside the web UI.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `SECRET_KEY` | ✅ | — | Flask session secret (generate with `openssl rand -hex 32`) |
+| `DATABASE_URL` | ✅ | — | PostgreSQL connection string |
+| `IMMICH_URL` | ✔ | — | Base URL of your Immich instance |
+| `IMMICH_API_KEY` | ✔ | — | API key for Immich |
+| `AUTH_METHOD` | | `immich` | `immich`, `oidc`, or `both` |
+| `OIDC_ISSUER_URL` | OIDC only | — | OIDC discovery endpoint |
+| `OIDC_CLIENT_ID` | OIDC only | — | OIDC client ID |
+| `OIDC_CLIENT_SECRET` | OIDC only | — | OIDC client secret |
+| `GLOBAL_SYNC_INTERVAL` | | `60` | Default sync interval in minutes |
+| `SYNC_ENABLED` | | `true` | Enable/disable the background scheduler |
+| `WEB_PORT` | | `5000` | Host port exposed by docker-compose |
+| `LOG_LEVEL` | | `INFO` | Python log level |
+
+---
+
+## Album Types
+
+### Dynamic Albums
+Criteria are saved to the database. APScheduler re-runs the sync every
+`GLOBAL_SYNC_INTERVAL` minutes (or per-album override). Assets are **added** and
+**removed** automatically to keep the album in sync with the query.
+
+### Static Albums
+Synced **once** at creation. A manual *Sync Now* button is available. The album in
+Immich is created if it doesn’t exist; otherwise it is updated by adding / removing
+assets that match or no longer match the query.
+
+---
+
+## Query Builder Reference
+
+| Field | Type | Notes |
+|---|---|---|
+| `people` | list | All people must appear (AND). Names or Immich UUIDs. |
+| `any_people` | list | At least one person must appear (OR). |
+| `people_strict_mode` | bool | Exact match—no other people allowed. |
+| `tags` | list | Tag names or UUIDs. |
+| `country` | string / list | Single country or list → one sub-query per country. |
+| `state` | string | |
+| `city` | string | |
+| `path` | string | Substring match against original file path. |
+| `favorite` | bool | Limit to favourited assets. |
+| `timespan` | object / list | `{"start": "YYYY-MM-DD", "end": "YYYY-MM-DD"}`. Multiple → union. |
+
+---
+
+## Development Setup
+
+```bash
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+
+export SECRET_KEY=dev DATABASE_URL=sqlite:///dev.db AUTH_METHOD=immich
+
+flask db upgrade
+flask run
 ```
 
-Run the script:
+### Running Tests
 
-```sh
-python sync.py --immich-url http://localhost:2283 --immich-api-key API_KEY --config-file ../config/dynamic-albums/demo-config.json
+```bash
+pip install pytest pytest-env
+pytest
 ```
 
-If you want the script to run periodically you can either use your OS scheduler or you can add the `--schedule-interval INTERVAL_IN_MINUTES`, which will sync the dynamic albums every X minutes.
+Test coverage includes:
+- **Unit**: models, `ImmichClient`, `AlbumSyncService`, validators
+- **Integration**: auth routes, album CRUD routes, REST API endpoints
+
+---
+
+## Migrating from the CLI Version
+
+1. Export your existing JSON config (e.g. `albums.json`).
+2. Start the web app and log in.
+3. Use **Settings → Import CLI Config** *(or the API endpoint `POST /api/import`)* and
+   upload your JSON file.
+4. Each entry becomes a **dynamic album** in the database.
+   Existing Immich albums are detected by name and linked automatically.
+
+> **Breaking change:** The original `ALBUMS_CONFIG` env var and JSON file are no longer
+> used. All configuration now lives in the PostgreSQL database.
+
+---
+
+## Architecture
+
+```
+app/
+├── __init__.py          Flask app factory
+├── config.py            Dev / Prod / Test config classes
+├── models.py            SQLAlchemy models (Album, Setting, SyncLog, User)
+├── immich_client.py     Immich REST API client
+├── album_service.py     Sync orchestration logic
+├── auth.py              OIDC + Immich authentication helpers
+├── scheduler.py         APScheduler integration
+├── routes/
+│   ├── auth.py            /login, /logout
+│   ├── albums.py          Album CRUD + manual sync
+│   ├── settings.py        Settings page
+│   └── api.py             REST API
+├── templates/           Jinja2 / Bootstrap 5 templates
+└── static/              CSS + JS
+migrations/              Alembic migration scripts
+tests/                   pytest test suite
+```
+
+---
+
+## Requirements
+
+- Immich ≥ v1.127.0
+- Python 3.11+
+- PostgreSQL 14+ (SQLite supported for development)
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
