@@ -33,6 +33,34 @@ msgstr ""
 msgid "Sign in to manage your albums"
 msgstr ""
 
+msgid "Sign in with Immich"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Your Immich password"
+msgstr ""
+
+msgid "Sign in"
+msgstr ""
+
+msgid "Single Sign-On (OIDC)"
+msgstr ""
+
+msgid "Sign in with SSO"
+msgstr ""
+
+msgid "Email and password are required."
+msgstr ""
+
+msgid "Invalid email or password. Please try again."
+msgstr ""
+
+# -- Settings page: kept for the settings form --
 msgid "Immich API Key"
 msgstr ""
 
@@ -43,15 +71,6 @@ msgid "API Key"
 msgstr ""
 
 msgid "Your Immich API key"
-msgstr ""
-
-msgid "Sign in"
-msgstr ""
-
-msgid "Single Sign-On (OIDC)"
-msgstr ""
-
-msgid "Sign in with SSO"
 msgstr ""
 
 # -- Album list page --
@@ -357,7 +376,7 @@ msgstr ""
 msgid "Sync Schedule"
 msgstr ""
 
-# -- Flash messages (auth.py) --
+# -- Flash messages --
 msgid "Invalid API key or Immich URL."
 msgstr ""
 

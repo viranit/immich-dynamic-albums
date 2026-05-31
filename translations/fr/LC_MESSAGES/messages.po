@@ -23,6 +23,33 @@ msgstr "Connexion"
 msgid "Sign in to manage your albums"
 msgstr "Connectez-vous pour g\u00e9rer vos albums"
 
+msgid "Sign in with Immich"
+msgstr "Se connecter avec Immich"
+
+msgid "Email"
+msgstr "E-mail"
+
+msgid "Password"
+msgstr "Mot de passe"
+
+msgid "Your Immich password"
+msgstr "Votre mot de passe Immich"
+
+msgid "Sign in"
+msgstr "Se connecter"
+
+msgid "Single Sign-On (OIDC)"
+msgstr "Authentification unique (OIDC)"
+
+msgid "Sign in with SSO"
+msgstr "Se connecter via SSO"
+
+msgid "Email and password are required."
+msgstr "L\u2019e-mail et le mot de passe sont obligatoires."
+
+msgid "Invalid email or password. Please try again."
+msgstr "E-mail ou mot de passe invalide. Veuillez r\u00e9essayer."
+
 msgid "Immich API Key"
 msgstr "Cl\u00e9 API Immich"
 
@@ -34,15 +61,6 @@ msgstr "Cl\u00e9 API"
 
 msgid "Your Immich API key"
 msgstr "Votre cl\u00e9 API Immich"
-
-msgid "Sign in"
-msgstr "Se connecter"
-
-msgid "Single Sign-On (OIDC)"
-msgstr "Authentification unique (OIDC)"
-
-msgid "Sign in with SSO"
-msgstr "Se connecter via SSO"
 
 msgid "New Album"
 msgstr "Nouvel album"

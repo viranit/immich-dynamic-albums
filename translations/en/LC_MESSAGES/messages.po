@@ -23,6 +23,33 @@ msgstr "Login"
 msgid "Sign in to manage your albums"
 msgstr "Sign in to manage your albums"
 
+msgid "Sign in with Immich"
+msgstr "Sign in with Immich"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Password"
+msgstr "Password"
+
+msgid "Your Immich password"
+msgstr "Your Immich password"
+
+msgid "Sign in"
+msgstr "Sign in"
+
+msgid "Single Sign-On (OIDC)"
+msgstr "Single Sign-On (OIDC)"
+
+msgid "Sign in with SSO"
+msgstr "Sign in with SSO"
+
+msgid "Email and password are required."
+msgstr "Email and password are required."
+
+msgid "Invalid email or password. Please try again."
+msgstr "Invalid email or password. Please try again."
+
 msgid "Immich API Key"
 msgstr "Immich API Key"
 
@@ -34,15 +61,6 @@ msgstr "API Key"
 
 msgid "Your Immich API key"
 msgstr "Your Immich API key"
-
-msgid "Sign in"
-msgstr "Sign in"
-
-msgid "Single Sign-On (OIDC)"
-msgstr "Single Sign-On (OIDC)"
-
-msgid "Sign in with SSO"
-msgstr "Sign in with SSO"
 
 msgid "New Album"
 msgstr "New Album"
