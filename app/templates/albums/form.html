@@ -1,5 +1,80 @@
 {% extends 'base.html' %}
 {% block title %}{{ _('Edit') if action == 'edit' else _('Create') }} {{ _('Album') }} — Immich Dynamic Albums{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Photo-owner avatar picker ─────────────────────────────────────────── */
+.user-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.user-card {
+  position: relative;
+  width: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: .5rem .25rem .4rem;
+  border: 2px solid var(--bs-border-color);
+  border-radius: .75rem;
+  background: var(--bs-body-bg);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  user-select: none;
+  outline: none;
+}
+.user-card:hover {
+  border-color: var(--bs-info);
+  background: rgba(13,202,240,.06);
+}
+.user-card:focus-visible {
+  box-shadow: 0 0 0 3px rgba(13,110,253,.35);
+}
+.user-card.selected {
+  border-color: var(--bs-primary);
+  background: rgba(13,110,253,.08);
+}
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: .3rem;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.user-card-name {
+  max-width: 74px;
+  text-align: center;
+  font-size: .68rem;
+  line-height: 1.25;
+  word-break: break-word;
+  color: var(--bs-body-color);
+}
+.user-check-icon {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  color: var(--bs-primary);
+  font-size: .8rem;
+  opacity: 0;
+  transition: opacity .15s;
+  pointer-events: none;
+}
+.user-card.selected .user-check-icon { opacity: 1; }
+.user-admin-badge {
+  font-size: .58rem;
+  margin-top: .15rem;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex align-items-center gap-2 mb-4">
   <a href="{{ url_for('albums.list_albums') }}" class="text-decoration-none text-secondary">
@@ -67,11 +142,11 @@
             </div>
           </div>
 
-          <!-- ============================================================
-               Photo owner selector
-               Admins see a multi-select of all Immich users.
-               Non-admins see a read-only notice (their photos are auto-scoped).
-               ============================================================ -->
+          {# ================================================================
+             Photo owner picker
+             Admins  → clickable avatar cards (visual multi-select)
+             Others  → informational alert
+             ================================================================ #}
           {% if immich_users %}
           <div>
             <label class="form-label fw-semibold">
@@ -80,21 +155,43 @@
             <div class="form-text mb-2">
               {{ _('Select whose photos to include. Leave all unchecked to include photos from every user.') }}
             </div>
-            <div class="d-flex flex-column gap-1 border rounded p-2" style="max-height:180px;overflow-y:auto;">
+
+            {# Colour palette for avatars — cycles by index #}
+            {% set avatar_colours = [
+              '#0d6efd','#6610f2','#0dcaf0','#198754',
+              '#fd7e14','#dc3545','#6f42c1','#20c997'
+            ] %}
+
+            <div class="user-picker" id="userPicker">
               {% for u in immich_users %}
-              <div class="form-check mb-0">
-                <input class="form-check-input" type="checkbox"
-                       name="user_ids" value="{{ u.id }}" id="uid_{{ u.id }}"
+              {% set colour = avatar_colours[loop.index0 % avatar_colours|length] %}
+              <div class="user-card{% if u.id in selected_user_ids %} selected{% endif %}"
+                   data-uid="{{ u.id }}"
+                   role="checkbox"
+                   aria-checked="{{ 'true' if u.id in selected_user_ids else 'false' }}"
+                   tabindex="0"
+                   title="{{ u.name }}{% if u.email %} · {{ u.email }}{% endif %}">
+
+                <div class="user-avatar" style="background:{{ colour }};">
+                  {{ (u.name or u.email or '?')[0] | upper }}
+                </div>
+
+                <span class="user-card-name">{{ u.name or u.email }}</span>
+
+                {% if u.isAdmin %}
+                <span class="badge bg-warning text-dark user-admin-badge">admin</span>
+                {% endif %}
+
+                <i class="bi bi-check-circle-fill user-check-icon"></i>
+
+                {# Hidden checkbox — driven by JS toggle; submitted with form #}
+                <input type="checkbox" name="user_ids" value="{{ u.id }}" class="d-none"
                        {% if u.id in selected_user_ids %}checked{% endif %}>
-                <label class="form-check-label small" for="uid_{{ u.id }}">
-                  {{ u.name }}
-                  {% if u.email %}<span class="text-secondary">({{ u.email }})</span>{% endif %}
-                  {% if u.isAdmin %}<span class="badge bg-warning text-dark ms-1">admin</span>{% endif %}
-                </label>
               </div>
               {% endfor %}
             </div>
           </div>
+
           {% elif not current_user.is_admin %}
           <div class="alert alert-info py-2 small mb-0">
             <i class="bi bi-person-fill me-1"></i>
@@ -228,6 +325,20 @@ const _i18n = {
   staticHelp:  {{ _('Synced once (or manually). Media matching the criteria will be added/removed.') | tojson }},
 };
 
+// ── Avatar-card toggle logic ──────────────────────────────────────────────
+document.querySelectorAll('#userPicker .user-card').forEach(card => {
+  function toggle() {
+    const selected = card.classList.toggle('selected');
+    card.setAttribute('aria-checked', selected ? 'true' : 'false');
+    card.querySelector('input[type=checkbox]').checked = selected;
+  }
+  card.addEventListener('click', toggle);
+  card.addEventListener('keydown', e => {
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+  });
+});
+
+// ── Query builder init ────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const raw = document.getElementById('query_config').value;
   try { loadQueryConfig(JSON.parse(raw)); } catch(e) {}

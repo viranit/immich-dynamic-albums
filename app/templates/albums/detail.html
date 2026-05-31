@@ -1,5 +1,33 @@
 {% extends 'base.html' %}
 {% block title %}{{ album.name }} — Immich Dynamic Albums{% endblock %}
+
+{% block extra_css %}
+<style>
+.owner-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.owner-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .2rem .55rem .2rem .2rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+  font-size: .78rem;
+  background: var(--bs-body-bg);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex align-items-center gap-2 mb-4">
   <a href="{{ url_for('albums.list_albums') }}" class="text-decoration-none text-secondary">
@@ -50,17 +78,29 @@
           <dt class="col-5 text-secondary">{{ _('Created') }}</dt>
           <dd class="col-7">{{ album.created_at.strftime('%Y-%m-%d') }}</dd>
 
-          <!-- Photo owner scope -->
+          {# ── Photo owner display ───────────────────────────────────────── #}
           <dt class="col-5 text-secondary">{{ _('Photo Owners') }}</dt>
           <dd class="col-7">
             {% set owner_ids = album.query_config.get('user_ids', []) %}
+            {% set avatar_colours = [
+              '#0d6efd','#6610f2','#0dcaf0','#198754',
+              '#fd7e14','#dc3545','#6f42c1','#20c997'
+            ] %}
             {% if owner_ids %}
+              <div class="d-flex flex-wrap gap-1">
               {% for uid in owner_ids %}
                 {% set u = immich_users_map.get(uid) %}
-                <span class="badge bg-secondary me-1 mb-1">
-                  {{ u.name if u else uid[:8] + '\u2026' }}
+                {% set colour = avatar_colours[loop.index0 % avatar_colours|length] %}
+                {% set initials = (u.name if u else uid[:1]) | upper %}
+                {% set label = u.name if u else uid[:8] + '\u2026' %}
+                <span class="owner-chip" title="{{ u.email if u else uid }}">
+                  <span class="owner-avatar" style="background:{{ colour }};">
+                    {{ initials[0] }}
+                  </span>
+                  {{ label }}
                 </span>
               {% endfor %}
+              </div>
             {% elif current_user.is_admin %}
               <em class="text-secondary">{{ _('All users') }}</em>
             {% else %}
