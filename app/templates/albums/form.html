@@ -24,7 +24,7 @@
           <div>
             <label for="name" class="form-label">{{ _('Album Name') }} <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="name" name="name" required
-                   value="{{ (form_data or album or {}).__class__.__name__ != 'NoneType' and (form_data.get('name') if form_data else (album.name if album else '')) or '' }}">
+                   value="{{ form_data.get('name') if form_data else (album.name if album else '') }}">
           </div>
 
           <div>
@@ -60,12 +60,47 @@
               <div class="input-group">
                 <input type="number" class="form-control" id="sync_interval" name="sync_interval"
                        min="1" placeholder="{{ _('Use global setting') }}"
-                       value="{{ (form_data.get('sync_interval') if form_data else (album.sync_interval if album and album.sync_interval else '')) }}">
+                       value="{{ form_data.get('sync_interval') if form_data else (album.sync_interval if album and album.sync_interval else '') }}">
                 <span class="input-group-text">{{ _('min') }}</span>
               </div>
               <div class="form-text">{{ _('Leave blank to use the global sync interval from Settings.') }}</div>
             </div>
           </div>
+
+          <!-- ============================================================
+               Photo owner selector
+               Admins see a multi-select of all Immich users.
+               Non-admins see a read-only notice (their photos are auto-scoped).
+               ============================================================ -->
+          {% if immich_users %}
+          <div>
+            <label class="form-label fw-semibold">
+              <i class="bi bi-people-fill text-info me-1"></i>{{ _('Photo Owners') }}
+            </label>
+            <div class="form-text mb-2">
+              {{ _('Select whose photos to include. Leave all unchecked to include photos from every user.') }}
+            </div>
+            <div class="d-flex flex-column gap-1 border rounded p-2" style="max-height:180px;overflow-y:auto;">
+              {% for u in immich_users %}
+              <div class="form-check mb-0">
+                <input class="form-check-input" type="checkbox"
+                       name="user_ids" value="{{ u.id }}" id="uid_{{ u.id }}"
+                       {% if u.id in selected_user_ids %}checked{% endif %}>
+                <label class="form-check-label small" for="uid_{{ u.id }}">
+                  {{ u.name }}
+                  {% if u.email %}<span class="text-secondary">({{ u.email }})</span>{% endif %}
+                  {% if u.isAdmin %}<span class="badge bg-warning text-dark ms-1">admin</span>{% endif %}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% elif not current_user.is_admin %}
+          <div class="alert alert-info py-2 small mb-0">
+            <i class="bi bi-person-fill me-1"></i>
+            {{ _('Only your own photos will be included in this album.') }}
+          </div>
+          {% endif %}
 
         </div>
       </div>
@@ -82,15 +117,14 @@
         </div>
         <div class="card-body">
 
-          <!-- Hidden input holds the actual JSON sent to the server -->
+          <!-- Hidden input holds the actual JSON sent to the server (user_ids excluded) -->
           <input type="hidden" name="query_config" id="query_config"
-                 value='{{ album.query_config | tojson if album else "{}" }}'>
+                 value='{{ query_config_form_json }}'>
 
           <!-- Visual builder -->
           <div id="queryBuilder">
 
             <div class="row g-3 mb-3">
-              <!-- People (AND) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('People (AND)') }}</label>
                 <div class="chip-container" id="peopleChips" data-field="people"></div>
@@ -104,7 +138,6 @@
                 </div>
               </div>
 
-              <!-- Any People (OR) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('Any People (OR)') }}</label>
                 <div class="chip-container" id="anyPeopleChips" data-field="any_people"></div>
@@ -114,7 +147,6 @@
                 </div>
               </div>
 
-              <!-- Tags -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('Tags') }}</label>
                 <div class="chip-container" id="tagsChips" data-field="tags"></div>
@@ -124,7 +156,6 @@
                 </div>
               </div>
 
-              <!-- Countries -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">{{ _('Countries') }}</label>
                 <div class="chip-container" id="countryChips" data-field="country"></div>
@@ -134,25 +165,21 @@
                 </div>
               </div>
 
-              <!-- State -->
               <div class="col-md-4">
                 <label for="stateInput" class="form-label fw-semibold">{{ _('State') }}</label>
                 <input type="text" class="form-control form-control-sm" id="stateInput" placeholder="e.g. California">
               </div>
 
-              <!-- City -->
               <div class="col-md-4">
                 <label for="cityInput" class="form-label fw-semibold">{{ _('City') }}</label>
                 <input type="text" class="form-control form-control-sm" id="cityInput" placeholder="e.g. Paris">
               </div>
 
-              <!-- Path -->
               <div class="col-md-4">
                 <label for="pathInput" class="form-label fw-semibold">{{ _('Path substring') }}</label>
                 <input type="text" class="form-control form-control-sm" id="pathInput" placeholder="e.g. Football">
               </div>
 
-              <!-- Favorite -->
               <div class="col-md-12">
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" id="favoriteCheck">
@@ -163,7 +190,6 @@
               </div>
             </div>
 
-            <!-- Timespans -->
             <div class="mb-2 d-flex justify-content-between align-items-center">
               <label class="form-label mb-0 fw-semibold">{{ _('Date Ranges') }}</label>
               <button type="button" class="btn btn-sm btn-outline-primary" onclick="addTimespan()">
@@ -173,7 +199,6 @@
             <div id="timespanList" class="d-flex flex-column gap-2"></div>
           </div>
 
-          <!-- Raw JSON editor (hidden by default) -->
           <div id="jsonEditor" style="display:none">
             <textarea class="form-control font-monospace" id="jsonTextarea" rows="10"
                       placeholder='{ "country": "Egypt", "favorite": true }'></textarea>
@@ -198,7 +223,6 @@
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/albums.js') }}"></script>
 <script>
-// Translated help strings injected server-side so inline JS can use them.
 const _i18n = {
   dynamicHelp: {{ _('Automatically synced on schedule.') | tojson }},
   staticHelp:  {{ _('Synced once (or manually). Media matching the criteria will be added/removed.') | tojson }},

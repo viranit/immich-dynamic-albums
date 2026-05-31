@@ -49,6 +49,24 @@
 
           <dt class="col-5 text-secondary">{{ _('Created') }}</dt>
           <dd class="col-7">{{ album.created_at.strftime('%Y-%m-%d') }}</dd>
+
+          <!-- Photo owner scope -->
+          <dt class="col-5 text-secondary">{{ _('Photo Owners') }}</dt>
+          <dd class="col-7">
+            {% set owner_ids = album.query_config.get('user_ids', []) %}
+            {% if owner_ids %}
+              {% for uid in owner_ids %}
+                {% set u = immich_users_map.get(uid) %}
+                <span class="badge bg-secondary me-1 mb-1">
+                  {{ u.name if u else uid[:8] + '\u2026' }}
+                </span>
+              {% endfor %}
+            {% elif current_user.is_admin %}
+              <em class="text-secondary">{{ _('All users') }}</em>
+            {% else %}
+              <em class="text-secondary">{{ _('Your photos only') }}</em>
+            {% endif %}
+          </dd>
         </dl>
       </div>
     </div>
