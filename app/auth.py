@@ -33,53 +33,69 @@ def load_user(user_id):
     return User.query.get(user_id)
 
 
-def authenticate_immich(api_key: str) -> User:
-    """Authenticate using an Immich API key.
+def _get_immich_url() -> str:
+    """Return the configured Immich server URL from Settings or app config."""
+    setting = Setting.query.get('immich_url')
+    return setting.value if setting else current_app.config.get('IMMICH_URL', '')
 
-    Fetches ``/api/users/me`` to verify the key, then upserts a local User
-    row.  ``is_admin`` and ``immich_user_id`` are refreshed on every login so
-    they stay in sync with the Immich server.
+
+def _get_admin_api_key() -> str:
+    """Return the admin API key from Settings or app config."""
+    setting = Setting.query.get('immich_api_key')
+    return setting.value if setting else current_app.config.get('IMMICH_API_KEY', '')
+
+
+def authenticate_immich(email: str, password: str) -> 'User | None':
+    """Authenticate a user with their Immich email + password.
+
+    Flow:
+    1. Call ``POST /api/auth/login`` on the Immich server to validate credentials.
+       The user never needs to know the admin API key.
+    2. The login response contains the user's identity (id, email, isAdmin).
+    3. Upsert a local User row and refresh ``is_admin`` / ``immich_user_id``.
+    4. Store the *admin* API key in the session so all subsequent Immich
+       operations (search, album management) run with full admin privileges.
     """
     try:
-        immich_url_setting = Setting.query.get('immich_url')
-        immich_url = (
-            immich_url_setting.value
-            if immich_url_setting
-            else current_app.config['IMMICH_URL']
-        )
+        immich_url = _get_immich_url()
+        if not immich_url:
+            current_app.logger.error('Immich URL is not configured.')
+            return None
 
-        client = ImmichClient(immich_url, api_key)
-        user_info = client.whoami()
+        # Step 1 — validate credentials against Immich
+        login_info = ImmichClient.login_with_password(immich_url, email, password)
 
-        # Upsert the local user record
-        user = User.query.filter_by(username=user_info['email']).first()
+        # Step 2 — upsert local user record
+        user = User.query.filter_by(email=email).first()
         if not user:
             user = User(
-                username=user_info['email'],
-                email=user_info['email'],
+                username=login_info.get('name') or email,
+                email=email,
                 auth_method='immich',
                 is_active=True,
             )
             db.session.add(user)
 
-        # Always refresh admin status and Immich user ID from live data
-        user.immich_user_id = user_info.get('id')
-        user.is_admin = bool(user_info.get('isAdmin', False))
+        # Always refresh from live Immich data
+        user.username = login_info.get('name') or email
+        user.immich_user_id = login_info.get('userId')
+        user.is_admin = bool(login_info.get('isAdmin', False))
         user.last_login = datetime.utcnow()
         db.session.commit()
 
-        # Keep API key + URL in session for subsequent requests
-        session['immich_api_key'] = api_key
+        # Step 3 — store admin API key + URL in session for later requests
+        admin_api_key = _get_admin_api_key()
+        session['immich_api_key'] = admin_api_key
         session['immich_url'] = immich_url
 
         return user
 
     except Exception as e:
-        current_app.logger.error(f"Immich authentication failed: {e}")
+        current_app.logger.error(f'Immich authentication failed: {e}')
         return None
 
 
-def authenticate_oidc(user_info: dict) -> User:
+def authenticate_oidc(user_info: dict) -> 'User | None':
     """Authenticate using OIDC.
 
     OIDC users are *not* automatically granted admin rights; set ``is_admin``
@@ -106,7 +122,7 @@ def authenticate_oidc(user_info: dict) -> User:
         return user
 
     except Exception as e:
-        current_app.logger.error(f"OIDC authentication failed: {e}")
+        current_app.logger.error(f'OIDC authentication failed: {e}')
         return None
 
 
@@ -115,17 +131,11 @@ def get_immich_client() -> ImmichClient:
     api_key = session.get('immich_api_key')
     if not api_key:
         api_key_setting = Setting.query.get('immich_api_key')
-        if api_key_setting:
-            api_key = api_key_setting.value
-        else:
-            api_key = current_app.config.get('IMMICH_API_KEY')
+        api_key = api_key_setting.value if api_key_setting else current_app.config.get('IMMICH_API_KEY')
 
     immich_url = session.get('immich_url')
     if not immich_url:
         immich_url_setting = Setting.query.get('immich_url')
-        if immich_url_setting:
-            immich_url = immich_url_setting.value
-        else:
-            immich_url = current_app.config['IMMICH_URL']
+        immich_url = immich_url_setting.value if immich_url_setting else current_app.config['IMMICH_URL']
 
     return ImmichClient(immich_url, api_key)

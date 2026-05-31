@@ -20,26 +20,23 @@ def login():
 
 @bp.route('/login/immich', methods=['POST'])
 def login_immich():
-    """Authenticate with an Immich API key."""
-    api_key = request.form.get('api_key', '').strip()
-    immich_url = request.form.get('immich_url', '').strip()
+    """Authenticate with Immich email + password."""
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
 
-    if not api_key:
-        flash(_('API key is required.'), 'danger')
+    if not email or not password:
+        flash(_('Email and password are required.'), 'danger')
         return redirect(url_for('auth.login'))
 
-    if immich_url:
-        session['immich_url'] = immich_url
-
     from app.auth import authenticate_immich
-    user = authenticate_immich(api_key)
+    user = authenticate_immich(email, password)
     if user:
         login_user(user, remember=True)
         flash(_('Welcome, %(name)s!', name=user.username), 'success')
         next_page = request.args.get('next')
         return redirect(next_page or url_for('albums.list_albums'))
 
-    flash(_('Invalid API key or Immich URL. Please try again.'), 'danger')
+    flash(_('Invalid email or password. Please try again.'), 'danger')
     return redirect(url_for('auth.login'))
 
 

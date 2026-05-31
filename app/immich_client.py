@@ -18,6 +18,36 @@ class ImmichClient:
             "x-api-key": self.api_key,
         })
 
+    # ------------------------------------------------------------------
+    # Credential-based login (used only during authentication; does NOT
+    # require an existing API key on the client instance).
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def login_with_password(immich_url: str, email: str, password: str) -> Dict:
+        """Authenticate against Immich with email + password.
+
+        Calls ``POST /api/auth/login`` and returns the response dict which
+        includes ``accessToken``, ``userId``, ``userEmail``, ``name``,
+        ``isAdmin``, etc.
+
+        Raises ``requests.HTTPError`` on bad credentials (401) or any other
+        HTTP failure.
+        """
+        url = immich_url.rstrip("/") + "/api/auth/login"
+        resp = requests.post(
+            url,
+            json={"email": email, "password": password},
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+    # ------------------------------------------------------------------
+    # User / admin endpoints
+    # ------------------------------------------------------------------
+
     def whoami(self):
         """Get current authenticated user information."""
         return self._get("/api/users/me")
