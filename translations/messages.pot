@@ -203,6 +203,22 @@ msgstr ""
 msgid "Synced once (or manually). Media matching the criteria will be added/removed."
 msgstr ""
 
+# -- Album form / detail: photo owner picker --
+msgid "Photo Owners"
+msgstr ""
+
+msgid "Select whose photos to include. Leave all unchecked to include photos from every user."
+msgstr ""
+
+msgid "Only your own photos will be included in this album."
+msgstr ""
+
+msgid "All users"
+msgstr ""
+
+msgid "Your photos only"
+msgstr ""
+
 # -- Album detail --
 msgid "Details"
 msgstr ""

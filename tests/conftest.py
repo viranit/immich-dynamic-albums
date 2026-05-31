@@ -31,20 +31,20 @@ def db(app):
 
 @pytest.fixture()
 def client(app):
-    """Flask test client."""
+    """Flask test client (unauthenticated)."""
     return app.test_client()
 
 
 @pytest.fixture()
 def auth_client(app, db):
-    """A test client already logged in as a dummy Immich user."""
-    # Insert a user and log in via the test client
+    """A test client already logged in as a regular (non-admin) Immich user."""
     user = User(
         id='test-user-uuid',
         username='testuser',
         email='test@example.com',
         auth_method='immich',
         immich_user_id='immich-user-id',
+        is_admin=False,
         is_active=True,
     )
     db.session.add(user)
@@ -58,6 +58,28 @@ def auth_client(app, db):
 
 
 @pytest.fixture()
+def admin_client(app, db):
+    """A test client already logged in as an admin Immich user."""
+    user = User(
+        id='admin-user-uuid',
+        username='adminuser',
+        email='admin@example.com',
+        auth_method='immich',
+        immich_user_id='immich-admin-id',
+        is_admin=True,
+        is_active=True,
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess['_user_id'] = user.id
+        sess['immich_api_key'] = 'test-admin-key'
+    return client
+
+
+@pytest.fixture()
 def mock_immich_client():
     """Return a MagicMock that mimics ImmichClient."""
     mock = MagicMock()
@@ -66,14 +88,18 @@ def mock_immich_client():
     mock.get_or_create_album.return_value = 'album-uuid-1234'
     mock.add_assets_to_album.return_value = None
     mock.remove_assets_from_album.return_value = None
-    mock.get_people.return_value = []
+    mock.get_people.return_value = {'people': []}
     mock.get_tags.return_value = []
+    mock.get_users.return_value = [
+        {'id': 'immich-user-id', 'name': 'Test User', 'email': 'test@example.com', 'isAdmin': False},
+        {'id': 'immich-admin-id', 'name': 'Admin User', 'email': 'admin@example.com', 'isAdmin': True},
+    ]
     return mock
 
 
 @pytest.fixture()
 def sample_album(db):
-    """Insert and return a sample dynamic album."""
+    """Insert and return a sample dynamic album (no owner = legacy)."""
     album = Album(
         name='Test Album',
         album_type='dynamic',

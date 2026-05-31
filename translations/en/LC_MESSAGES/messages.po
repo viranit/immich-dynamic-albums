@@ -1,15 +1,7 @@
 # English translations for Immich Dynamic Albums.
-# Copyright (C) 2024
-# This file is distributed under the same license as the Immich Dynamic Albums project.
-#
 msgid ""
 msgstr ""
 "Project-Id-Version: immich-dynamic-albums 1.0\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-01 00:00+0000\n"
-"PO-Revision-Date: 2024-01-01 00:00+0000\n"
-"Last-Translator: Automatically generated\n"
-"Language-Team: English\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -198,6 +190,21 @@ msgstr "Automatically synced on schedule."
 
 msgid "Synced once (or manually). Media matching the criteria will be added/removed."
 msgstr "Synced once (or manually). Media matching the criteria will be added/removed."
+
+msgid "Photo Owners"
+msgstr "Photo Owners"
+
+msgid "Select whose photos to include. Leave all unchecked to include photos from every user."
+msgstr "Select whose photos to include. Leave all unchecked to include photos from every user."
+
+msgid "Only your own photos will be included in this album."
+msgstr "Only your own photos will be included in this album."
+
+msgid "All users"
+msgstr "All users"
+
+msgid "Your photos only"
+msgstr "Your photos only"
 
 msgid "Details"
 msgstr "Details"
