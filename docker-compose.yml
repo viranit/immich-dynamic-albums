@@ -1,23 +1,28 @@
+# Standalone compose file for immich-dynamic-albums.
+# For integration into an existing Immich stack on Unraid (or elsewhere)
+# see the "Unraid integration" section in README.md.
+
 services:
-  web:
+  immich-dynamic-albums:
     build: .
+    container_name: immich_dynamic_albums
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-5000}:5000"
     environment:
       FLASK_ENV: production
-      SECRET_KEY: ${SECRET_KEY:?err}
-      DATABASE_URL: postgresql://immich_albums:immich_albums@db:5432/immich_albums
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+      DATABASE_URL: postgresql://immich_albums:${DB_PASSWORD:-immich_albums}@immich-dynamic-albums-db:5432/immich_albums
       IMMICH_URL: ${IMMICH_URL:-}
       IMMICH_API_KEY: ${IMMICH_API_KEY:-}
       AUTH_METHOD: ${AUTH_METHOD:-immich}
-      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:-}
+      OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       GLOBAL_SYNC_INTERVAL: ${GLOBAL_SYNC_INTERVAL:-60}
       SYNC_ENABLED: ${SYNC_ENABLED:-true}
     depends_on:
-      db:
+      immich-dynamic-albums-db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
@@ -26,22 +31,40 @@ services:
       retries: 3
       start_period: 20s
     volumes:
-      - ./logs:/app/logs
+      - ${LOGS_LOCATION:-./logs}:/app/logs
+    networks:
+      - frontend
+      - backend
 
-  db:
+  immich-dynamic-albums-db:
     image: postgres:16-alpine
+    container_name: immich_dynamic_albums_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: immich_albums
       POSTGRES_USER: immich_albums
-      POSTGRES_PASSWORD: immich_albums
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-immich_albums}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ${DB_DATA_LOCATION:-pgdata}:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U immich_albums -d immich_albums"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - backend
+
+# When running standalone these networks are created automatically.
+# When added to an existing Unraid Immich stack, declare them as external:
+#
+# networks:
+#   frontend:
+#     external: true
+#   backend:
+#     external: true
+networks:
+  frontend:
+  backend:
 
 volumes:
   pgdata:
