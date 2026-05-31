@@ -19,6 +19,10 @@ class Album(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Owner: the app-user who created this album (NULL = legacy / shared)
+    user_id = db.Column(db.String(36), db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    owner = db.relationship('User', back_populates='albums')
+
     sync_logs = db.relationship(
         'SyncLog', backref='album', lazy='dynamic', cascade='all, delete-orphan'
     )
@@ -39,6 +43,7 @@ class Album(db.Model):
             'last_synced': self.last_synced.isoformat() if self.last_synced else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'user_id': self.user_id,
         }
 
     def to_jsonapi_resource(self) -> dict:
@@ -61,6 +66,9 @@ class Album(db.Model):
             relationships={
                 'sync-logs': {
                     'links': {'related': f'/api/albums/{self.id}/logs'},
+                },
+                'owner': {
+                    'data': {'type': 'users', 'id': self.user_id} if self.user_id else None,
                 },
             },
             links={'self': f'/api/albums/{self.id}'},
@@ -163,9 +171,12 @@ class User(db.Model):
     auth_method = db.Column(db.String(20), nullable=False)  # 'immich' or 'oidc'
     immich_user_id = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
+
+    albums = db.relationship('Album', back_populates='owner', lazy='dynamic')
 
     # Flask-Login interface
     @property
@@ -185,6 +196,7 @@ class User(db.Model):
             'username': self.username,
             'email': self.email,
             'auth_method': self.auth_method,
+            'is_admin': self.is_admin,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login': self.last_login.isoformat() if self.last_login else None,
@@ -200,6 +212,7 @@ class User(db.Model):
                 'username': self.username,
                 'email': self.email,
                 'auth_method': self.auth_method,
+                'is_admin': self.is_admin,
                 'is_active': self.is_active,
                 'created_at': self.created_at.isoformat() if self.created_at else None,
                 'last_login': self.last_login.isoformat() if self.last_login else None,
