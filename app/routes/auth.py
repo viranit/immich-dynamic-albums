@@ -20,7 +20,11 @@ def login():
 
 @bp.route('/login/immich', methods=['POST'])
 def login_immich():
-    """Authenticate with Immich email + password."""
+    """Authenticate with Immich email + password.
+
+    Only works when the Immich instance allows local (non-OIDC) logins.
+    If Immich is configured for OIDC-only, users should use the SSO button.
+    """
     email = request.form.get('email', '').strip()
     password = request.form.get('password', '')
 
@@ -42,7 +46,13 @@ def login_immich():
 
 @bp.route('/login/oidc')
 def login_oidc():
-    """Redirect to the configured OIDC provider."""
+    """Redirect to the configured OIDC provider.
+
+    Use this when Immich itself is configured to use OIDC — the same
+    OIDC provider (e.g. Keycloak, Authelia) should be configured here.
+    After the OIDC callback the app resolves the user's Immich identity
+    via the admin API key.
+    """
     from app.auth import oauth
     redirect_uri = url_for('auth.oidc_callback', _external=True)
     return oauth.oidc.authorize_redirect(redirect_uri)

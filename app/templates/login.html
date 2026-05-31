@@ -35,6 +35,13 @@
             <i class="bi bi-box-arrow-in-right me-1"></i> {{ _('Sign in') }}
           </button>
         </form>
+        {# Show a hint when Immich is OIDC-only so users know to use SSO #}
+        {% if auth_method == 'both' %}
+        <p class="text-secondary small mt-2 mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          {{ _('If your Immich account uses Single Sign-On, use the SSO button below.') }}
+        </p>
+        {% endif %}
       </div>
     </div>
     {% endif %}
@@ -49,6 +56,10 @@
         <a href="{{ url_for('auth.login_oidc') }}" class="btn btn-outline-info w-100">
           <i class="bi bi-box-arrow-in-right me-1"></i> {{ _('Sign in with SSO') }}
         </a>
+        <p class="text-secondary small mt-2 mb-0">
+          <i class="bi bi-info-circle me-1"></i>
+          {{ _('Use this if your Immich instance is configured with Single Sign-On.') }}
+        </p>
       </div>
     </div>
     {% endif %}

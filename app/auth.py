@@ -45,16 +45,41 @@ def _get_admin_api_key() -> str:
     return setting.value if setting else current_app.config.get('IMMICH_API_KEY', '')
 
 
+def _resolve_immich_identity(email: str) -> dict:
+    """Look up a user in Immich by email using the admin API key.
+
+    Returns a dict with ``id`` and ``isAdmin`` (both may be None if the user
+    is not found or the admin key is not yet configured).
+    """
+    try:
+        immich_url = _get_immich_url()
+        admin_key = _get_admin_api_key()
+        if not immich_url or not admin_key:
+            return {}
+        client = ImmichClient(immich_url, admin_key)
+        users = client.get_users()
+        for u in users:
+            if u.get('email', '').lower() == email.lower():
+                return u
+    except Exception as exc:
+        current_app.logger.warning(f'Could not resolve Immich identity for {email}: {exc}')
+    return {}
+
+
 def authenticate_immich(email: str, password: str) -> 'User | None':
     """Authenticate a user with their Immich email + password.
 
     Flow:
-    1. Call ``POST /api/auth/login`` on the Immich server to validate credentials.
-       The user never needs to know the admin API key.
-    2. The login response contains the user's identity (id, email, isAdmin).
-    3. Upsert a local User row and refresh ``is_admin`` / ``immich_user_id``.
+    1. Call ``POST /api/auth/login`` on the Immich server to validate
+       credentials.  The user never needs to know the admin API key.
+    2. The login response contains the user's identity (userId, isAdmin).
+    3. Upsert a local User row; refresh ``is_admin`` / ``immich_user_id``.
     4. Store the *admin* API key in the session so all subsequent Immich
-       operations (search, album management) run with full admin privileges.
+       operations run with full admin privileges.
+
+    Note: this flow requires the user to have a local Immich password.
+    If the Immich instance uses OIDC exclusively, users should log in via
+    the OIDC option instead.
     """
     try:
         immich_url = _get_immich_url()
@@ -84,8 +109,7 @@ def authenticate_immich(email: str, password: str) -> 'User | None':
         db.session.commit()
 
         # Step 3 — store admin API key + URL in session for later requests
-        admin_api_key = _get_admin_api_key()
-        session['immich_api_key'] = admin_api_key
+        session['immich_api_key'] = _get_admin_api_key()
         session['immich_url'] = immich_url
 
         return user
@@ -96,16 +120,26 @@ def authenticate_immich(email: str, password: str) -> 'User | None':
 
 
 def authenticate_oidc(user_info: dict) -> 'User | None':
-    """Authenticate using OIDC.
+    """Authenticate a user via OIDC, then resolve their Immich identity.
 
-    OIDC users are *not* automatically granted admin rights; set ``is_admin``
-    manually in the database if needed.
+    This handles two cases:
+
+    * **Immich uses local auth**: the user may or may not have an Immich
+      account.  We attempt a best-effort lookup by email.
+    * **Immich uses OIDC** (same or different provider): the user's email
+      from the OIDC token is used to find them in Immich via the admin API
+      key, obtaining their ``immich_user_id`` and ``is_admin`` flag.
+
+    The admin API key (configured in Settings) is always stored in the session
+    so that album search / sync operations have full privileges.
     """
     try:
         username = user_info.get('preferred_username') or user_info.get('email')
-        email = user_info.get('email')
+        email = user_info.get('email', '')
+        name = user_info.get('name') or username
 
-        user = User.query.filter_by(username=username).first()
+        # Upsert local user
+        user = User.query.filter_by(email=email).first()
         if not user:
             user = User(
                 username=username,
@@ -116,8 +150,30 @@ def authenticate_oidc(user_info: dict) -> 'User | None':
             )
             db.session.add(user)
 
+        user.username = name or username
+
+        # Resolve Immich identity via admin key so we get immich_user_id
+        # and is_admin even when the Immich instance itself uses OIDC.
+        immich_record = _resolve_immich_identity(email)
+        if immich_record:
+            user.immich_user_id = immich_record.get('id')
+            user.is_admin = bool(immich_record.get('isAdmin', False))
+            current_app.logger.info(
+                f'OIDC user {email} resolved to Immich id={user.immich_user_id} '
+                f'admin={user.is_admin}'
+            )
+        else:
+            current_app.logger.warning(
+                f'OIDC user {email} not found in Immich; '
+                'immich_user_id will be unset and is_admin defaults to False.'
+            )
+
         user.last_login = datetime.utcnow()
         db.session.commit()
+
+        # Store admin key in session for subsequent Immich API calls
+        session['immich_api_key'] = _get_admin_api_key()
+        session['immich_url'] = _get_immich_url()
 
         return user
 
