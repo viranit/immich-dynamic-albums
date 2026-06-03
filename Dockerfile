@@ -3,18 +3,30 @@
 # ---- build stage ----
 FROM python:3.12-slim AS builder
 WORKDIR /build
+
+# Install libpq-dev + gcc so psycopg2 can be compiled from source on
+# architectures (e.g. linux/arm/v7) that have no pre-built binary wheel.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq-dev gcc \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ---- runtime stage ----
 FROM python:3.12-slim
 LABEL maintainer="viranit" \
-      description="Immich Dynamic Albums \u2014 Web UI"
+      description="Immich Dynamic Albums — Web UI"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PATH="/install/bin:$PATH" \
     PYTHONPATH="/install/lib/python3.12/site-packages"
+
+# libpq is needed at runtime by the compiled psycopg2 extension.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
