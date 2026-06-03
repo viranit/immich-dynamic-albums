@@ -15,11 +15,13 @@ A self-hosted web application for creating and managing **dynamic** and **static
 | **Dynamic albums** | Automatically synced on a configurable schedule |
 | **Static albums** | Synced once (or manually) against a saved query |
 | **Query builder** | Visual UI: people, tags, countries, date ranges, favorites, path filters |
-| **Authentication** | Immich API key **and/or** OIDC / SSO |
+| **Authentication** | Immich email/password **and/or** OIDC / SSO |
+| **Admin user picker** | Admins visually select whose photos to include |
 | **Settings UI** | All environment variables configurable via the web UI |
 | **Sync history** | Per-album audit log of every sync run |
 | **Scheduler** | APScheduler—no cron daemon needed |
-| **Docker-ready** | Multi-stage image + docker-compose with PostgreSQL |
+| **Docker-ready** | Multi-stage image published to GHCR; pull without building |
+| **i18n** | Fully localizable UI (English + French included) |
 
 ---
 
@@ -37,8 +39,99 @@ cp .env.example .env
 # 3. Launch
 docker compose up -d
 
-# 4. Open http://localhost:5000 and log in with your Immich API key
+# 4. Open http://localhost:5000 and log in with your Immich credentials
 ```
+
+---
+
+## Unraid / Docker-Pull Deployment
+
+The image is automatically published to the **GitHub Container Registry** on every push to `main`.
+You do **not** need to clone this repository or build anything locally.
+
+### Pulling the image
+
+```bash
+docker pull ghcr.io/viranit/immich-dynamic-albums:main
+```
+
+### Adding to your existing Immich stack
+
+Add the following services to your existing `docker-compose.yml` (alongside the Immich services):
+
+```yaml
+  immich-dynamic-albums:
+    container_name: immich_dynamic_albums
+    image: ghcr.io/viranit/immich-dynamic-albums:main
+    restart: unless-stopped
+    ports:
+      - "5050:5000"          # change 5050 to any free host port
+    env_file:
+      - .env.albums          # separate env file — see below
+    depends_on:
+      - immich-dynamic-albums-db
+    networks:
+      - frontend
+      - backend
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  immich-dynamic-albums-db:
+    container_name: immich_dynamic_albums_db
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: immich_albums
+      POSTGRES_USER: immich_albums
+      POSTGRES_PASSWORD: ${ALBUMS_DB_PASSWORD:-immich_albums}    # change in production
+    volumes:
+      - /mnt/user/appdata/immich-albums/pgdata:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U immich_albums -d immich_albums"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+#### `.env.albums`
+
+```dotenv
+SECRET_KEY=<run: openssl rand -hex 32>
+DATABASE_URL=postgresql://immich_albums:immich_albums@immich_dynamic_albums_db:5432/immich_albums
+IMMICH_URL=http://immich_server:2283
+IMMICH_API_KEY=<your Immich admin API key>
+
+# Authentication (choose one)
+AUTH_METHOD=immich          # or: oidc / both
+
+# OIDC only (leave blank if using AUTH_METHOD=immich)
+OIDC_ISSUER_URL=
+OIDC_CLIENT_ID=
+OIDC_CLIENT_SECRET=
+
+# Scheduler
+GLOBAL_SYNC_INTERVAL=60    # minutes
+SYNC_ENABLED=true
+```
+
+> **Tip:** `IMMICH_URL` should use the internal Docker service name (`immich_server`) so
+> traffic stays on the `backend` network and never leaves the host.
+
+### Upgrading
+
+```bash
+docker compose pull immich-dynamic-albums
+docker compose up -d immich-dynamic-albums
+```
+
+The container automatically runs `flask db upgrade` on startup, so schema migrations are
+applied without manual intervention.
 
 ---
 
@@ -51,7 +144,7 @@ All variables can also be set from **Settings** inside the web UI.
 | `SECRET_KEY` | ✅ | — | Flask session secret (generate with `openssl rand -hex 32`) |
 | `DATABASE_URL` | ✅ | — | PostgreSQL connection string |
 | `IMMICH_URL` | ✔ | — | Base URL of your Immich instance |
-| `IMMICH_API_KEY` | ✔ | — | API key for Immich |
+| `IMMICH_API_KEY` | ✔ | — | Immich admin API key |
 | `AUTH_METHOD` | | `immich` | `immich`, `oidc`, or `both` |
 | `OIDC_ISSUER_URL` | OIDC only | — | OIDC discovery endpoint |
 | `OIDC_CLIENT_ID` | OIDC only | — | OIDC client ID |
@@ -72,7 +165,7 @@ Criteria are saved to the database. APScheduler re-runs the sync every
 
 ### Static Albums
 Synced **once** at creation. A manual *Sync Now* button is available. The album in
-Immich is created if it doesn’t exist; otherwise it is updated by adding / removing
+Immich is created if it doesn't exist; otherwise it is updated by adding / removing
 assets that match or no longer match the query.
 
 ---
