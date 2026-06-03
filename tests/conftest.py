@@ -8,11 +8,15 @@ from app.models import Album, Setting, SyncLog, User
 
 @pytest.fixture(scope='session')
 def app():
-    """Create application with an in-memory SQLite test database."""
-    app = create_app('testing')
-    with app.app_context():
+    """Create application with an in-memory SQLite test database.
+
+    The scheduler is disabled via TestingConfig so daemon threads don't
+    keep the process alive after the test session finishes.
+    """
+    application = create_app('testing')
+    with application.app_context():
         _db.create_all()
-        yield app
+        yield application
         _db.drop_all()
 
 

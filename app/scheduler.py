@@ -1,6 +1,5 @@
 """Scheduler for automatic album synchronization."""
 import os
-import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
@@ -9,8 +8,16 @@ _flask_app = None  # stored reference to avoid circular import via run.py
 
 
 def init_scheduler(app):
-    """Initialize the background scheduler."""
+    """Initialize the background scheduler.
+
+    Skipped entirely when ``SCHEDULER_ENABLED`` is False (e.g. in tests).
+    """
     global scheduler, _flask_app
+
+    if not app.config.get('SCHEDULER_ENABLED', True):
+        app.logger.info('Scheduler disabled (SCHEDULER_ENABLED=False)')
+        return
+
     _flask_app = app
 
     if scheduler is None:
@@ -20,6 +27,14 @@ def init_scheduler(app):
 
         with app.app_context():
             schedule_sync_jobs()
+
+
+def shutdown_scheduler():
+    """Gracefully shut down the scheduler (called from tests or on app teardown)."""
+    global scheduler
+    if scheduler is not None and scheduler.running:
+        scheduler.shutdown(wait=False)
+        scheduler = None
 
 
 def schedule_sync_jobs():
@@ -62,7 +77,6 @@ def _read_scheduler_settings(app):
 
     try:
         from app.models import Setting
-        import sqlalchemy.exc
 
         interval_setting = Setting.query.get('global_sync_interval')
         global_interval = int(interval_setting.value) if interval_setting else default_interval

@@ -31,6 +31,8 @@ class Config:
 
     # Scheduler configuration
     SCHEDULER_API_ENABLED = True
+    # Set to False to prevent the background scheduler from starting (used in tests).
+    SCHEDULER_ENABLED = True
 
     # Internationalisation
     LANGUAGES = {
@@ -63,6 +65,8 @@ class TestingConfig(Config):
     TESTING = True
     # pytest.ini overrides DATABASE_URL to sqlite:///:memory:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///:memory:')
+    # Disable background scheduler so tests don't hang on daemon threads.
+    SCHEDULER_ENABLED = False
 
 
 config = {
