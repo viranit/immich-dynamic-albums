@@ -1,7 +1,8 @@
 """Scheduler for automatic album synchronization."""
+import os
+import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-import logging
 
 scheduler = None
 _flask_app = None  # stored reference to avoid circular import via run.py
@@ -22,21 +23,20 @@ def init_scheduler(app):
 
 
 def schedule_sync_jobs():
-    """(Re-)schedule synchronization jobs from current settings."""
+    """(Re-)schedule synchronization jobs from current settings.
+
+    Falls back to environment-variable defaults when the database is not yet
+    ready (e.g. during ``flask db upgrade`` on a fresh install).
+    """
     global scheduler
     if scheduler is None:
         return
 
-    from app.models import Setting
     from flask import current_app
 
     scheduler.remove_all_jobs()
 
-    interval_setting = Setting.query.get('global_sync_interval')
-    global_interval = int(interval_setting.value) if interval_setting else 60
-
-    enabled_setting = Setting.query.get('sync_enabled')
-    sync_enabled = (enabled_setting.value.lower() == 'true') if enabled_setting else True
+    global_interval, sync_enabled = _read_scheduler_settings(current_app)
 
     if not sync_enabled or global_interval <= 0:
         current_app.logger.info('Automatic syncing is disabled or interval is 0')
@@ -50,6 +50,33 @@ def schedule_sync_jobs():
         replace_existing=True,
     )
     current_app.logger.info(f'Scheduled sync every {global_interval} minutes')
+
+
+def _read_scheduler_settings(app):
+    """Read sync interval and enabled flag from DB, falling back to env vars.
+
+    Returns a (interval_minutes: int, enabled: bool) tuple.
+    """
+    default_interval = int(os.environ.get('GLOBAL_SYNC_INTERVAL', 60))
+    default_enabled = os.environ.get('SYNC_ENABLED', 'true').lower() == 'true'
+
+    try:
+        from app.models import Setting
+        import sqlalchemy.exc
+
+        interval_setting = Setting.query.get('global_sync_interval')
+        global_interval = int(interval_setting.value) if interval_setting else default_interval
+
+        enabled_setting = Setting.query.get('sync_enabled')
+        sync_enabled = (enabled_setting.value.lower() == 'true') if enabled_setting else default_enabled
+
+        return global_interval, sync_enabled
+
+    except Exception as exc:  # DB not ready yet (e.g. tables don't exist)
+        app.logger.warning(
+            'Could not read scheduler settings from DB (using env-var defaults): %s', exc
+        )
+        return default_interval, default_enabled
 
 
 def _run_sync_all_dynamic_albums():
