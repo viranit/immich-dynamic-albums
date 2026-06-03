@@ -1,6 +1,6 @@
 """Shared pytest fixtures."""
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from app import create_app, db as _db
 from app.models import Album, Setting, SyncLog, User
@@ -22,15 +22,18 @@ def app():
 
 @pytest.fixture()
 def db(app):
-    """Provide a clean database transaction per test (rollback on teardown)."""
+    """Provide a clean database state per test.
+
+    SQLAlchemy 2.x removed ``session.bind`` so the old nested-transaction
+    rollback trick no longer works.  Instead we truncate all tables after
+    each test using plain DELETE statements inside an app context.
+    """
     with app.app_context():
-        connection = _db.engine.connect()
-        transaction = connection.begin()
-        _db.session.bind = connection  # type: ignore[attr-defined]
         yield _db
         _db.session.remove()
-        transaction.rollback()
-        connection.close()
+        for table in reversed(_db.metadata.sorted_tables):
+            _db.session.execute(table.delete())
+        _db.session.commit()
 
 
 @pytest.fixture()
@@ -85,19 +88,34 @@ def admin_client(app, db):
 
 @pytest.fixture()
 def mock_immich_client():
-    """Return a MagicMock that mimics ImmichClient."""
+    """Return a MagicMock that mimics ImmichClient.
+
+    Method return values match the real ImmichClient API so that
+    AlbumSyncService can exercise its full logic without a live Immich server.
+    """
     mock = MagicMock()
-    mock.get_album_assets.return_value = []
-    mock.search_assets.return_value = []
-    mock.get_or_create_album.return_value = 'album-uuid-1234'
-    mock.add_assets_to_album.return_value = None
-    mock.remove_assets_from_album.return_value = None
+
+    # Mappings / metadata
     mock.get_people.return_value = {'people': []}
     mock.get_tags.return_value = []
     mock.get_users.return_value = [
         {'id': 'immich-user-id', 'name': 'Test User', 'email': 'test@example.com', 'isAdmin': False},
         {'id': 'immich-admin-id', 'name': 'Admin User', 'email': 'admin@example.com', 'isAdmin': True},
     ]
+
+    # Album management
+    mock.get_albums.return_value = []  # no pre-existing albums → create path
+    mock.create_album.return_value = {'id': 'immich-album-id', 'albumName': 'Test Album'}
+    # get_album(id, with_assets=True) returns album dict with assets list
+    mock.get_album.return_value = {'id': 'immich-album-id', 'albumName': 'Test Album', 'assets': []}
+
+    # Asset search: each element is a dict with at least an 'id' key
+    mock.search_assets.return_value = []
+
+    # Mutation helpers
+    mock.add_assets_to_album.return_value = None
+    mock.delete_assets_from_album.return_value = None
+
     return mock
 
 
