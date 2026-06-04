@@ -27,7 +27,7 @@ def validate_query_config(config: Any) -> List[str]:
         return ['query_config must be a JSON object']
 
     if not config:
-        return ['At least one search criterion is required']
+        return ['At least one search criteria is required']
 
     unknown = set(config.keys()) - QUERY_ALLOWED_KEYS
     if unknown:
@@ -36,6 +36,10 @@ def validate_query_config(config: Any) -> List[str]:
     # people / any_people cannot coexist in the same query block
     if 'people' in config and 'any_people' in config:
         errors.append("Cannot use 'people' and 'any_people' in the same query")
+
+    # favorite must be a boolean
+    if 'favorite' in config and not isinstance(config['favorite'], bool):
+        errors.append("'favorite' must be a boolean (true or false)")
 
     # Validate timespans
     timespans = config.get('timespan', [])
