@@ -4,15 +4,15 @@ All responses use ``Content-Type: application/vnd.api+json``.
 
 Request bodies are accepted in both the strict JSON:API envelope::
 
-    {"data": {"type": "albums", "attributes": {\u2026}}}
+    {"data": {"type": "albums", "attributes": {…}}}
 
 and as plain JSON (backward-compatible with the browser UI)::
 
-    {"name": "My Album", "album_type": "dynamic", \u2026}
+    {"name": "My Album", "album_type": "dynamic", …}
 
 Error responses follow the JSON:API errors object::
 
-    {"jsonapi": {\u2026}, "errors": [{"status": "422", "title": \u2026, "detail": \u2026}]}
+    {"jsonapi": {…}, "errors": [{"status": "422", "title": …, "detail": …}]}
 """
 import uuid
 
@@ -22,6 +22,8 @@ from flask_login import login_required
 from app import db
 from app.models import Album, Setting, SyncLog
 from app.utils.validators import validate_query_config
+from app.auth import get_immich_client
+from app.album_service import AlbumSyncService
 import app.utils.jsonapi as jsonapi
 
 bp = Blueprint('api', __name__)
@@ -140,8 +142,6 @@ def delete_album(album_id):
 def sync_album(album_id):
     album = Album.query.get_or_404(album_id)
     try:
-        from app.auth import get_immich_client
-        from app.album_service import AlbumSyncService
         result = AlbumSyncService(get_immich_client()).sync_album(album)
         return jsonapi.ok(
             jsonapi.resource(
@@ -182,7 +182,6 @@ def get_sync_logs(album_id):
 @login_required
 def get_people():
     try:
-        from app.auth import get_immich_client
         client = get_immich_client()
         if not client:
             return jsonapi.error(503, 'Service Unavailable', 'Immich client not configured')
@@ -202,7 +201,6 @@ def get_people():
 @login_required
 def get_tags():
     try:
-        from app.auth import get_immich_client
         client = get_immich_client()
         if not client:
             return jsonapi.error(503, 'Service Unavailable', 'Immich client not configured')
@@ -265,7 +263,6 @@ def test_connection():
     """Test the Immich connection using values from the request body (before saving)."""
     try:
         from app.immich_client import ImmichClient
-        from app.auth import get_immich_client
 
         attrs = jsonapi.get_attributes()
         url = attrs.get('immich_url', '').strip()

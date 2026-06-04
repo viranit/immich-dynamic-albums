@@ -13,6 +13,8 @@ from sqlalchemy import or_
 from app import db
 from app.models import Album, SyncLog
 from app.utils.validators import validate_query_config
+from app.auth import get_immich_client
+from app.album_service import AlbumSyncService
 
 bp = Blueprint('albums', __name__)
 
@@ -24,7 +26,6 @@ bp = Blueprint('albums', __name__)
 def _get_immich_users():
     """Return the list of Immich users, or [] on any error."""
     try:
-        from app.auth import get_immich_client
         return get_immich_client().get_users()
     except Exception:
         return []
@@ -116,7 +117,7 @@ def new_album():
     errors.extend(validate_query_config(query_config))
 
     if Album.query.filter_by(name=name).first():
-        errors.append(_('An album named "%(name)s" already exists.', name=name))
+        errors.append(_('An album named "«%(name)s»" already exists.', name=name))
 
     if errors:
         for err in errors:
@@ -151,7 +152,7 @@ def new_album():
     db.session.add(album)
     db.session.commit()
 
-    flash(_('Album "%(name)s" created.', name=name), 'success')
+    flash(_('Album "«%(name)s»" created.', name=name), 'success')
 
     if album_type == 'static':
         return redirect(url_for('albums.sync_album', album_id=album.id,
@@ -229,7 +230,7 @@ def edit_album(album_id):
 
     existing = Album.query.filter_by(name=name).first()
     if existing and existing.id != album_id:
-        errors.append(_('An album named "%(name)s" already exists.', name=name))
+        errors.append(_('An album named "«%(name)s»" already exists.', name=name))
 
     if errors:
         for err in errors:
@@ -261,7 +262,7 @@ def edit_album(album_id):
     album.sync_interval = int(sync_interval) if sync_interval else None
     db.session.commit()
 
-    flash(_('Album "%(name)s" updated.', name=name), 'success')
+    flash(_('Album "«%(name)s»" updated.', name=name), 'success')
     return redirect(url_for('albums.album_detail', album_id=album.id))
 
 
@@ -275,7 +276,7 @@ def delete_album(album_id):
     name = album.name
     db.session.delete(album)
     db.session.commit()
-    flash(_('Album "%(name)s" deleted from this app (Immich album untouched).', name=name),
+    flash(_('Album "«%(name)s»" deleted from this app (Immich album untouched).', name=name),
           'success')
     return redirect(url_for('albums.list_albums'))
 
@@ -288,14 +289,12 @@ def sync_album(album_id):
     _check_album_access(album)
 
     try:
-        from app.auth import get_immich_client
-        from app.album_service import AlbumSyncService
         client = get_immich_client()
         result = AlbumSyncService(client).sync_album(album)
 
         if result['status'] == 'success':
             flash(
-                _('Sync complete \u2014 %(added)s added, %(removed)s removed.',
+                _('Sync complete — %(added)s added, %(removed)s removed.',
                   added=result['assets_added'], removed=result['assets_removed']),
                 'success',
             )
