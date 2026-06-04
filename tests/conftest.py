@@ -31,11 +31,19 @@ def app():
 
     The scheduler is disabled via TestingConfig so daemon threads don't
     keep the process alive after the test session finishes.
+
+    Important: we do NOT keep an app_context active during 'yield'.
+    Flask 3.x stores 'g' on the AppContext; a persistent context causes
+    Flask-Babel to cache the locale from the first request on g._flask_babel
+    and reuse it for all subsequent requests, breaking per-request locale
+    detection.  Closing the setup context before yielding ensures every
+    client.get() creates a fresh AppContext with a clean 'g'.
     """
     application = create_app('testing')
     with application.app_context():
         _db.create_all()
-        yield application
+    yield application
+    with application.app_context():
         _db.drop_all()
 
 
