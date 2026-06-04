@@ -61,9 +61,11 @@ def create_app(config_name='default'):
     # Language-switching endpoint (no login required — just sets a session cookie)
     @app.route('/set-language/<locale>')
     def set_language(locale):
-        from flask import redirect
+        from flask import redirect, abort
         if locale in app.config.get('LANGUAGES', {}):
             session['locale'] = locale
+        else:
+            abort(400)
         return redirect(flask_request.referrer or '/')
 
     # Inject i18n helpers into every Jinja2 template context
