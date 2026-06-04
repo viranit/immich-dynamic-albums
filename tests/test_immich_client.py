@@ -1,6 +1,6 @@
 """Unit tests for ImmichClient."""
 import pytest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import requests
 
 from app.immich_client import ImmichClient
@@ -55,8 +55,8 @@ class TestSearchAssets:
             }
         }
         with patch.object(client.session, 'post', return_value=response):
-            result = client.search_assets({'country': 'Egypt'})
-        assert result == ['a1', 'a2']
+            result = list(client.search_assets(country='Egypt'))
+        assert result == [{'id': 'a1'}, {'id': 'a2'}]
 
     def test_multi_page_pagination(self, client):
         pages = [
@@ -71,8 +71,8 @@ class TestSearchAssets:
             responses.append(r)
 
         with patch.object(client.session, 'post', side_effect=responses):
-            result = client.search_assets({'favorite': True})
-        assert result == ['a1', 'a2']
+            result = list(client.search_assets(favorite=True))
+        assert result == [{'id': 'a1'}, {'id': 'a2'}]
 
 
 class TestGetOrCreateAlbum:
