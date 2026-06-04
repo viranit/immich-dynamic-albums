@@ -1,9 +1,28 @@
 """Shared pytest fixtures."""
+import os
+import subprocess
 import pytest
 from unittest.mock import MagicMock
 
 from app import create_app, db as _db
 from app.models import Album, Setting, SyncLog, User
+
+
+@pytest.fixture(scope='session', autouse=True)
+def _compile_translations():
+    """Compile .po → .mo translation files once per test session.
+
+    Flask-Babel reads compiled .mo files at runtime; without them the
+    French locale tests produce untranslated English strings.  Running
+    pybabel compile here avoids committing binary .mo files to the repo.
+    """
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    subprocess.run(
+        ['pybabel', 'compile', '-d', 'app/translations', '--use-fuzzy'],
+        cwd=project_root,
+        check=False,
+        capture_output=True,
+    )
 
 
 @pytest.fixture(scope='session')

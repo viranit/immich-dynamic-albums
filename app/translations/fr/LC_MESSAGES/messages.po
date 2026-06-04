@@ -1,0 +1,136 @@
+# French translations for Immich Dynamic Albums
+# Copyright (C) 2024
+msgid ""
+msgstr ""
+"Project-Id-Version: immich-dynamic-albums 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language: fr\n"
+"Language-Team: French\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.x\n"
+
+msgid "Login"
+msgstr "Connexion"
+
+msgid "Sign in"
+msgstr "Se connecter"
+
+msgid "Sign in to manage your albums"
+msgstr "Connectez-vous pour g\u00e9rer vos albums"
+
+msgid "Sign in with Immich"
+msgstr "Se connecter avec Immich"
+
+msgid "Sign in with SSO"
+msgstr "Se connecter avec SSO"
+
+msgid "Single Sign-On (OIDC)"
+msgstr "Authentification unique (OIDC)"
+
+msgid "Email"
+msgstr "Adresse e-mail"
+
+msgid "Password"
+msgstr "Mot de passe"
+
+msgid "Your Immich password"
+msgstr "Votre mot de passe Immich"
+
+msgid "Albums"
+msgstr "Albums"
+
+msgid "New Album"
+msgstr "Nouvel album"
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Auto-sync"
+msgstr "Synchronisation auto"
+
+msgid "Last Synced"
+msgstr "Derni\u00e8re synchro"
+
+msgid "Immich Album"
+msgstr "Album Immich"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Dynamic"
+msgstr "Dynamique"
+
+msgid "Static"
+msgstr "Statique"
+
+msgid "No albums yet."
+msgstr "Aucun album pour l\u2019instant."
+
+msgid "Create your first album"
+msgstr "Cr\u00e9ez votre premier album"
+
+msgid "Delete Album?"
+msgstr "Supprimer l\u2019album\u00a0?"
+
+msgid "The album in Immich will not be deleted."
+msgstr "L\u2019album dans Immich ne sera pas supprim\u00e9."
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Edit"
+msgstr "Modifier"
+
+msgid "Sync now"
+msgstr "Synchroniser maintenant"
+
+msgid "Settings"
+msgstr "Param\u00e8tres"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Logout"
+msgstr "D\u00e9connexion"
+
+msgid "Dashboard"
+msgstr "Tableau de bord"
+
+msgid "Album name is required."
+msgstr "Le nom de l\u2019album est requis."
+
+msgid "Invalid JSON in query configuration."
+msgstr "JSON invalide dans la configuration de requ\u00eate."
+
+msgid "At least one search criteria is required"
+msgstr "Au moins un crit\u00e8re de recherche est requis"
+
+msgid "Sync complete \u2014 %(added)s added, %(removed)s removed."
+msgstr "Synchronisation termin\u00e9e \u2014 %(added)s ajout\u00e9(s), %(removed)s supprim\u00e9(s)."
+
+msgid "Sync failed: %(error)s"
+msgstr "\u00c9chec de la synchronisation\u00a0: %(error)s"
+
+msgid "Sync error: %(error)s"
+msgstr "Erreur de synchronisation\u00a0: %(error)s"
+
+msgid "If your Immich account uses Single Sign-On, use the SSO button below."
+msgstr "Si votre compte Immich utilise l\u2019authentification unique, utilisez le bouton SSO ci-dessous."
+
+msgid "Use this if your Immich instance is configured with Single Sign-On."
+msgstr "Utilisez ceci si votre instance Immich est configur\u00e9e avec l\u2019authentification unique."
+
+msgid "Delete \"__ALBUM__\" from this app?"
+msgstr "Supprimer \u00ab\u00a0__ALBUM__\u00a0\u00bb de cette application\u00a0?"
