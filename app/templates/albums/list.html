@@ -116,14 +116,15 @@
 
 {% block extra_js %}
 <script>
-// Translated template string injected server-side so the JS can format it.
-const _deleteConfirmTpl = {{ _('Delete "%(name)s" from this app?') | tojson }};
+// Use __ALBUM__ as a safe JS placeholder — avoids Python %() format-string
+// conflicts with Flask-Babel / MarkupSafe when rendered server-side.
+const _deleteConfirmTpl = {{ _('Delete "__ALBUM__" from this app?') | tojson }};
 const deleteModal = document.getElementById('deleteModal');
 deleteModal.addEventListener('show.bs.modal', e => {
   const btn = e.relatedTarget;
   const name = btn.dataset.albumName;
   document.getElementById('deleteConfirmText').textContent =
-    _deleteConfirmTpl.replace('%(name)s', name);
+    _deleteConfirmTpl.replace('__ALBUM__', name);
   document.getElementById('deleteForm').action = btn.dataset.deleteUrl;
 });
 </script>
