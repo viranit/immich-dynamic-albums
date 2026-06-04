@@ -7,7 +7,8 @@ class TestLoginPage:
     def test_get_login_shows_form(self, client):
         resp = client.get('/login')
         assert resp.status_code == 200
-        assert b'API Key' in resp.data or b'api_key' in resp.data
+        # Login form uses email/password fields (not raw API key)
+        assert b'email' in resp.data or b'password' in resp.data
 
     def test_authenticated_user_redirected(self, auth_client):
         resp = auth_client.get('/login')

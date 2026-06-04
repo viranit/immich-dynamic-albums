@@ -115,7 +115,7 @@ class TestAllTemplatesLocales:
         with auth_client.session_transaction() as sess:
             sess['locale'] = locale
 
-        resp = auth_client.get('/albums/')
+        resp = auth_client.get('/albums')
         assert resp.status_code == 200
 
     @pytest.mark.parametrize('locale', LOCALES)
@@ -133,7 +133,7 @@ class TestAllTemplatesLocales:
         with auth_client.session_transaction() as sess:
             sess['locale'] = locale
 
-        resp = auth_client.get('/settings/')
+        resp = auth_client.get('/settings')
         assert resp.status_code == 200
 
 
@@ -144,7 +144,7 @@ class TestAllTemplatesLocales:
 class TestLanguageSwitcher:
     def test_language_switcher_present_in_navbar(self, auth_client):
         """Authenticated pages must include the language-switcher dropdown."""
-        resp = auth_client.get('/albums/')
+        resp = auth_client.get('/albums')
         assert resp.status_code == 200
         body = resp.data.decode()
         # The switcher is only rendered when len(LANGUAGES) > 1; verify markup.
@@ -152,7 +152,7 @@ class TestLanguageSwitcher:
 
     def test_language_switcher_links_correct_locales(self, auth_client):
         """Switcher dropdown must link to set-language/<locale> for each language."""
-        resp = auth_client.get('/albums/')
+        resp = auth_client.get('/albums')
         body = resp.data.decode()
         assert '/set-language/en' in body
         assert '/set-language/fr' in body
