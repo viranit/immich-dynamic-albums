@@ -153,7 +153,7 @@ def save_settings():
         if not value and defn['type'] != 'checkbox':
             continue
 
-        setting = Setting.query.get(key)
+        setting = db.session.get(Setting, key)
         if setting:
             setting.value = value
         else:

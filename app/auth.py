@@ -1,5 +1,5 @@
 """Authentication module."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import current_app, session
 from flask_login import login_user, logout_user
@@ -30,18 +30,18 @@ def init_oauth(app):
 @login_manager.user_loader
 def load_user(user_id):
     """Load user for Flask-Login."""
-    return User.query.get(user_id)
+    return db.session.get(User, user_id)
 
 
 def _get_immich_url() -> str:
     """Return the configured Immich server URL from Settings or app config."""
-    setting = Setting.query.get('immich_url')
+    setting = db.session.get(Setting, 'immich_url')
     return setting.value if setting else current_app.config.get('IMMICH_URL', '')
 
 
 def _get_admin_api_key() -> str:
     """Return the admin API key from Settings or app config."""
-    setting = Setting.query.get('immich_api_key')
+    setting = db.session.get(Setting, 'immich_api_key')
     return setting.value if setting else current_app.config.get('IMMICH_API_KEY', '')
 
 
@@ -105,7 +105,7 @@ def authenticate_immich(email: str, password: str) -> 'User | None':
         user.username = login_info.get('name') or email
         user.immich_user_id = login_info.get('userId')
         user.is_admin = bool(login_info.get('isAdmin', False))
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
         # Step 3 — store admin API key + URL in session for later requests
@@ -168,7 +168,7 @@ def authenticate_oidc(user_info: dict) -> 'User | None':
                 'immich_user_id will be unset and is_admin defaults to False.'
             )
 
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc)
         db.session.commit()
 
         # Store admin key in session for subsequent Immich API calls
@@ -186,12 +186,12 @@ def get_immich_client() -> ImmichClient:
     """Return an ImmichClient for the current session or global settings."""
     api_key = session.get('immich_api_key')
     if not api_key:
-        api_key_setting = Setting.query.get('immich_api_key')
+        api_key_setting = db.session.get(Setting, 'immich_api_key')
         api_key = api_key_setting.value if api_key_setting else current_app.config.get('IMMICH_API_KEY')
 
     immich_url = session.get('immich_url')
     if not immich_url:
-        immich_url_setting = Setting.query.get('immich_url')
+        immich_url_setting = db.session.get(Setting, 'immich_url')
         immich_url = immich_url_setting.value if immich_url_setting else current_app.config['IMMICH_URL']
 
     return ImmichClient(immich_url, api_key)

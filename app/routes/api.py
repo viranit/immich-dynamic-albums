@@ -241,7 +241,7 @@ def update_settings():
         return jsonapi.error(400, 'Bad Request', 'No attributes provided')
 
     for key, value in attrs.items():
-        setting = Setting.query.get(key)
+        setting = db.session.get(Setting, key)
         if setting:
             setting.value = str(value)
         else:

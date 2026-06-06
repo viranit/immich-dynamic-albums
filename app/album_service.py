@@ -1,5 +1,5 @@
 """Album synchronization service."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Iterable, List
 import itertools
 import uuid
@@ -31,7 +31,7 @@ class AlbumSyncService:
         sync_log = SyncLog(
             album_id=album.id,
             status='running',
-            started_at=datetime.utcnow(),
+            started_at=datetime.now(timezone.utc),
         )
         db.session.add(sync_log)
         db.session.commit()
@@ -81,9 +81,9 @@ class AlbumSyncService:
             sync_log.status = 'success'
             sync_log.assets_added = len(missing_assets)
             sync_log.assets_removed = len(extra_assets)
-            sync_log.completed_at = datetime.utcnow()
+            sync_log.completed_at = datetime.now(timezone.utc)
 
-            album.last_synced = datetime.utcnow()
+            album.last_synced = datetime.now(timezone.utc)
             db.session.commit()
 
             return {
@@ -96,7 +96,7 @@ class AlbumSyncService:
         except Exception as e:
             sync_log.status = 'error'
             sync_log.error_message = str(e)
-            sync_log.completed_at = datetime.utcnow()
+            sync_log.completed_at = datetime.now(timezone.utc)
             db.session.commit()
             return {'status': 'error', 'error': str(e)}
 

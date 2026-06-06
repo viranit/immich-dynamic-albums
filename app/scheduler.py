@@ -2,6 +2,7 @@
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from app import db
 
 scheduler = None
 _flask_app = None  # stored reference to avoid circular import via run.py
@@ -78,10 +79,10 @@ def _read_scheduler_settings(app):
     try:
         from app.models import Setting
 
-        interval_setting = Setting.query.get('global_sync_interval')
+        interval_setting = db.session.get(Setting, 'global_sync_interval')
         global_interval = int(interval_setting.value) if interval_setting else default_interval
 
-        enabled_setting = Setting.query.get('sync_enabled')
+        enabled_setting = db.session.get(Setting, 'sync_enabled')
         sync_enabled = (enabled_setting.value.lower() == 'true') if enabled_setting else default_enabled
 
         return global_interval, sync_enabled
